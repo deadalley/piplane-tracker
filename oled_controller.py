@@ -24,7 +24,7 @@ import threading
 from config import get_config
 
 
-class AirplaneOLEDController:
+class PiPlaneOLEDController:
     def __init__(self, width=None, height=None, i2c_address=None):
         """
         Initialize OLED controller for 0.91 inch display
@@ -368,7 +368,7 @@ class AirplaneOLEDController:
 # Test function for OLED
 def test_oled():
     """Test the OLED functionality"""
-    oled_controller = AirplaneOLEDController()
+    oled_controller = PiPlaneOLEDController()
 
     # Test basic display
     oled_controller.display_startup_message()

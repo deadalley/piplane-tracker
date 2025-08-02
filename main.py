@@ -10,9 +10,9 @@ import os
 from datetime import datetime
 from config import get_config
 
-from alert_system import PiPlaneMonitor
-from lcd_controller import AirplaneLCDController
-from oled_controller import AirplaneOLEDController
+from monitor import PiPlaneMonitor
+from lcd_controller import PiPlaneLCDController
+from oled_controller import PiPlaneOLEDController
 
 
 def signal_handler(sig, frame):
@@ -69,7 +69,7 @@ def main():
     lcd_controller = None
     if lcd_enabled:
         try:
-            lcd_controller = AirplaneLCDController()
+            lcd_controller = PiPlaneLCDController()
             lcd_controller.display_startup_message()
             print("✅ LCD controller initialized")
         except Exception as e:
@@ -80,7 +80,7 @@ def main():
     oled_controller = None
     if oled_enabled:
         try:
-            oled_controller = AirplaneOLEDController()
+            oled_controller = PiPlaneOLEDController()
             print("✅ OLED controller initialized")
         except Exception as e:
             print(f"⚠️  OLED controller initialization failed: {e}")

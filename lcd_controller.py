@@ -18,7 +18,7 @@ from datetime import datetime
 import threading
 
 
-class AirplaneLCDController:
+class PiPlaneLCDController:
     def __init__(self):
         self.lcd = None
         self.display_active = False
