@@ -118,9 +118,9 @@ class PiPlaneMonitorService:
                 aircraft_to_remove = self.aircraft_history[hex_code]
                 last_seen = aircraft_to_remove["last_seen"]
                 if (current_time - last_seen).total_seconds() > 300:  # 5 minutes
-                    print(
-                        f"Removing old aircraft: {aircraft_to_remove['flight'] or hex_code}"
-                    )
+                    # print(
+                    #     f"Removing old aircraft: {aircraft_to_remove['flight'] or hex_code}"
+                    # )
                     aircrafts_to_remove.append(hex_code)
 
         for hex_code in aircrafts_to_remove:
@@ -281,11 +281,6 @@ class PiPlaneMonitorService:
         self.exit_requested = False
 
         def monitor_loop():
-            if self.lcd_controller:
-                self.lcd_controller.display_idle_message()
-            if self.oled_controller:
-                self.oled_controller.display_idle_message()
-
             print(
                 f"✅ [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Monitoring started"
             )

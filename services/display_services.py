@@ -85,6 +85,13 @@ class BaseDisplayService(ABC):
                         and hex_code in self.aircraft_history
                     ):
                         self._process_aircraft(aircraft)
+                else:
+                    # No aircraft in queue, check if we should show idle message
+                    with self.queue_lock:
+                        queue_empty = len(self.queue) == 0
+
+                    if queue_empty:
+                        self._show_idle_message()
 
                 time.sleep(0.1)  # Brief sleep to prevent excessive CPU usage
             except Exception as e:
@@ -94,6 +101,10 @@ class BaseDisplayService(ABC):
     @abstractmethod
     def _process_aircraft(self, aircraft: dict):
         """Process a single aircraft - implemented by subclasses"""
+        pass
+
+    def _show_idle_message(self):
+        """Show idle message - can be overridden by subclasses"""
         pass
 
 
@@ -117,12 +128,20 @@ class LCDDisplayService(BaseDisplayService):
     def __init__(self, lcd_controller):
         super().__init__("LCD")
         self.lcd_controller = lcd_controller
+        self._last_state = "idle"  # Track current display state
 
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on LCD"""
         if self.lcd_controller:
             self.lcd_controller.display_new_aircraft_detected(interval=2)
             self.lcd_controller.display_aircraft_info(aircraft=aircraft, interval=2)
+            self._last_state = "aircraft"
+
+    def _show_idle_message(self):
+        """Show idle message on LCD if not already showing"""
+        if self.lcd_controller and self._last_state != "idle":
+            self.lcd_controller.display_idle_message()
+            self._last_state = "idle"
 
 
 class OLEDDisplayService(BaseDisplayService):
@@ -131,9 +150,17 @@ class OLEDDisplayService(BaseDisplayService):
     def __init__(self, oled_controller):
         super().__init__("OLED")
         self.oled_controller = oled_controller
+        self._last_state = "idle"  # Track current display state
 
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on OLED"""
         if self.oled_controller:
             self.oled_controller.display_new_aircraft_detected(interval=2)
             self.oled_controller.display_aircraft_info(aircraft=aircraft, interval=5)
+            self._last_state = "aircraft"
+
+    def _show_idle_message(self):
+        """Show idle message on OLED if not already showing"""
+        if self.oled_controller and self._last_state != "idle":
+            self.oled_controller.display_idle_message()
+            self._last_state = "idle"
