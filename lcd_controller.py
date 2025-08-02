@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pyright: reportPossiblyUnboundVariable=false, reportMissingImports=false
 """
-LCD Display Controller for Airplane Tracker
+LCD Display Controller for PiPlane Tracker
 Uses rpi-lcd to display airplane information on LCD screen
 """
 
@@ -29,23 +29,12 @@ class PiPlaneLCDController:
         if LCD_AVAILABLE:
             try:
                 self.lcd = LCD()
-
                 self.lcd.clear()
-                self.lcd.text("Airplane Tracker", 1)
-                self.lcd.text("Initializing...", 2)
                 print("LCD initialized successfully")
                 time.sleep(2)
             except Exception as e:
                 self.lcd = None
                 raise e
-
-    def clear_display(self):
-        if self.lcd:
-            self.lcd.clear()
-
-    def turn_off_display(self):
-        if self.lcd:
-            self.lcd.backlight(False)
 
     def display_text(self, line1, line2=""):
         if self.lcd:
@@ -59,7 +48,7 @@ class PiPlaneLCDController:
 
     def display_startup_message(self):
         """Display startup message"""
-        self.display_text("Airplane Tracker", "Starting up...")
+        self.display_text("PiPlane Tracker", "Starting up...")
         time.sleep(2)
 
     def display_aircraft_count(self, total_count, new_count=0):
@@ -123,9 +112,10 @@ class PiPlaneLCDController:
         if self.lcd:
             try:
                 self.lcd.clear()
-                self.lcd.text("Airplane Tracker", 1)
-                self.lcd.text("Stopped", 2)
+                self.lcd.text("PiPlane Tracker", 1)
+                self.lcd.text("Shutting down...", 2)
                 time.sleep(1)
                 self.lcd.clear()
+                self.lcd.backlight(False)
             except Exception as e:
                 print(f"Error during LCD cleanup: {e}")

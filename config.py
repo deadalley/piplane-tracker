@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration Management for Airplane Tracker
+Configuration Management for PiPlane Tracker
 Handles loading and managing configuration from flat config file
 """
 
@@ -8,7 +8,7 @@ import os
 from typing import Dict, Any, Optional
 
 
-class AirplaneTrackerConfig:
+class PiPlaneTrackerConfig:
     """Configuration manager for airplane tracker"""
 
     def __init__(self, config_file_path="config"):
@@ -199,16 +199,16 @@ class AirplaneTrackerConfig:
 _config_instance = None
 
 
-def get_config() -> AirplaneTrackerConfig:
+def get_config() -> PiPlaneTrackerConfig:
     """Get global configuration instance"""
     global _config_instance
     if _config_instance is None:
-        _config_instance = AirplaneTrackerConfig()
+        _config_instance = PiPlaneTrackerConfig()
     return _config_instance
 
 
 def reload_config():
     """Reload configuration from file"""
     global _config_instance
-    _config_instance = AirplaneTrackerConfig()
+    _config_instance = PiPlaneTrackerConfig()
     return _config_instance

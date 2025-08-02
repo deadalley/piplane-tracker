@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pyright: reportPossiblyUnboundVariable=false, reportMissingImports=false, reportOptionalMemberAccess=false
 """
-OLED Display Controller for Airplane Tracker
+OLED Display Controller for PiPlane Tracker
 Uses 0.91 inch I2C OLED display (typically SSD1306 128x32)
 """
 
@@ -99,16 +99,14 @@ class PiPlaneOLEDController:
         if self.display:
             # Clear the image
             self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
-            return True
-        return False
 
     def display_startup_message(self):
         """Display startup message"""
         if not self.show_display():
-            print("OLED: Airplane Tracker | Starting...")
+            print("OLED: PiPlane Tracker | Starting...")
             return
 
-        self.draw_text("Airplane Tracker", 0, 0, self.font_medium)
+        self.draw_text("PiPlane Tracker", 0, 0, self.font_medium)
         self.draw_text("Initializing...", 0, 12, self.font_small)
         self.draw_text(
             f"v1.0 {datetime.now().strftime('%H:%M')}", 0, 22, self.font_small
@@ -298,8 +296,8 @@ class PiPlaneOLEDController:
                 if not self.show_display():
                     return
 
-                self.draw_text("Airplane Tracker", 0, 5, self.font_medium)
-                self.draw_text("Stopped", 0, 20, self.font_small)
+                self.draw_text("PiPlane Tracker", 0, 5, self.font_medium)
+                self.draw_text("Shutting down...", 0, 20, self.font_small)
 
                 self.display.image(self.image)
                 self.display.show()

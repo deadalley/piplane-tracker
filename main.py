@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Main Airplane Tracker Application
-Console-based airplane tracker with LCD/OLED display and alert system
+Main PiPlane Tracker Application
 """
 
 import sys
@@ -109,7 +108,7 @@ def main():
         # Start unified monitoring loop
         if monitor:
             monitor.start_monitoring(interval=5)  # Single interval for all updates
-            print("Unified monitoring started")
+            print("Monitoring started...")
 
         # Main application loop - just keep alive
         import time

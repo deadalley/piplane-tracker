@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Airplane Tracker Alert System
+PiPlane Tracker Monitor
 Tracks new airplanes entering range and provides alerts
 """
 
