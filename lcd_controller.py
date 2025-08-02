@@ -118,61 +118,8 @@ class PiPlaneLCDController:
     def display_error(self, error_msg):
         self.display_text("ERROR", error_msg[:16])
 
-    def start_cycling_display(self, aircraft_data_func, interval=5):
-        """
-        Start cycling through aircraft information on display
-
-        Args:
-            aircraft_data_func: Function that returns current aircraft data
-            interval (int): Display cycle interval in seconds
-        """
-        self.display_active = True
-
-        def display_loop():
-            while self.display_active:
-                try:
-                    aircraft_data = aircraft_data_func()
-
-                    if not aircraft_data or "aircraft" not in aircraft_data:
-                        self.display_error("No data")
-                        time.sleep(interval)
-                        continue
-
-                    aircraft_list = aircraft_data["aircraft"]
-
-                    if not aircraft_list:
-                        self.display_no_aircraft()
-                        time.sleep(interval)
-                        continue
-
-                    # First show the count
-                    self.display_aircraft_count(len(aircraft_list))
-                    time.sleep(interval)
-
-                    # Then cycle through individual aircraft
-                    for aircraft in aircraft_list:
-                        if not self.display_active:
-                            break
-                        self.display_aircraft_info(aircraft)
-                        time.sleep(interval)
-
-                except Exception as e:
-                    print(f"Error in LCD display loop: {e}")
-                    self.display_error("Display error")
-                    time.sleep(interval)
-
-        display_thread = threading.Thread(target=display_loop, daemon=True)
-        display_thread.start()
-
-    def stop_cycling_display(self):
-        """Stop the cycling display"""
-        self.display_active = False
-        self.clear_display()
-        self.turn_off_display()
-
     def cleanup(self):
         """Cleanup LCD resources"""
-        self.stop_cycling_display()
         if self.lcd:
             try:
                 self.lcd.clear()

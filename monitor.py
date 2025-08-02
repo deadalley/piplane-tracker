@@ -14,18 +14,27 @@ from config import get_config
 
 
 class PiPlaneMonitor:
-    def __init__(self, file_path: Optional[str] = None):
+    def __init__(
+        self, file_path: Optional[str] = None, lcd_controller=None, oled_controller=None
+    ):
         """
         Initialize the alert system
 
         Args:
             file_path (str, optional): Path to the aircraft.json file.
                                      If None, uses path from configuration.
+            lcd_controller: LCD controller instance
+            oled_controller: OLED controller instance
         """
         self.known_aircraft: Set[str] = set()
         self.aircraft_history: Dict[str, dict] = {}
         self.alert_callbacks = []
         self.running = False
+
+        # Display controllers
+        self.lcd_controller = lcd_controller
+        self.oled_controller = oled_controller
+        self.console_enabled = True
 
         # Set up data source path
         if file_path is None:
@@ -33,6 +42,10 @@ class PiPlaneMonitor:
             self.file_path = config.get_data_source_path()
         else:
             self.file_path = file_path
+
+    def set_console_enabled(self, enabled: bool):
+        """Enable or disable console output"""
+        self.console_enabled = enabled
 
     def read_aircraft_data(self) -> Optional[Dict]:
         """
@@ -173,20 +186,121 @@ class PiPlaneMonitor:
 
     def start_monitoring(self, interval=5):
         """
-        Start monitoring for new aircraft
+        Start monitoring for new aircraft and updating displays
 
         Args:
-            data_source_func: Function that returns aircraft data
-            interval (int): Check interval in seconds
+            interval (int): Update interval in seconds for all components
         """
         self.running = True
 
+        lcd_display_index = 0
+        oled_display_index = 0
+
         def monitor_loop():
+            nonlocal lcd_display_index, oled_display_index
+
             while self.running:
                 try:
                     aircraft_data = self.read_aircraft_data()
+
                     if aircraft_data:
+                        # Always check for new aircraft
                         self.check_for_new_aircraft(aircraft_data)
+
+                        aircraft_list = aircraft_data.get("aircraft", [])
+
+                        # Update LCD display
+                        if self.lcd_controller:
+                            try:
+                                if not aircraft_list:
+                                    self.lcd_controller.display_no_aircraft()
+                                else:
+                                    # Cycle through aircraft count and individual aircraft
+                                    if lcd_display_index == 0:
+                                        self.lcd_controller.display_aircraft_count(
+                                            len(aircraft_list)
+                                        )
+                                    else:
+                                        aircraft_idx = (lcd_display_index - 1) % len(
+                                            aircraft_list
+                                        )
+                                        self.lcd_controller.display_aircraft_info(
+                                            aircraft_list[aircraft_idx]
+                                        )
+
+                                    lcd_display_index = (lcd_display_index + 1) % (
+                                        len(aircraft_list) + 1
+                                    )
+                            except Exception as e:
+                                print(f"Error updating LCD: {e}")
+
+                        # Update OLED display
+                        if self.oled_controller:
+                            try:
+                                if not aircraft_list:
+                                    self.oled_controller.display_no_aircraft()
+                                else:
+                                    # Cycle through aircraft count and individual aircraft
+                                    if oled_display_index == 0:
+                                        self.oled_controller.display_aircraft_count(
+                                            len(aircraft_list)
+                                        )
+                                    else:
+                                        aircraft_idx = (oled_display_index - 1) % len(
+                                            aircraft_list
+                                        )
+                                        self.oled_controller.display_aircraft_info(
+                                            aircraft_list[aircraft_idx]
+                                        )
+
+                                    oled_display_index = (oled_display_index + 1) % (
+                                        len(aircraft_list) + 1
+                                    )
+                            except Exception as e:
+                                print(f"Error updating OLED: {e}")
+
+                        # Update console
+                        if self.console_enabled:
+                            try:
+                                aircraft_count = len(aircraft_list)
+                                timestamp = datetime.now().strftime("%H:%M:%S")
+                                print(
+                                    f"[{timestamp}] Aircraft detected: {aircraft_count}"
+                                )
+
+                                # Show aircraft with callsigns
+                                with_callsign = [
+                                    a
+                                    for a in aircraft_list
+                                    if a.get("flight", "").strip()
+                                ]
+                                if with_callsign:
+                                    print(
+                                        f"  Aircraft with callsigns: {len(with_callsign)}"
+                                    )
+                                    for aircraft in with_callsign[:5]:  # Show first 5
+                                        flight = aircraft.get("flight", "").strip()
+                                        alt = aircraft.get("alt_baro") or aircraft.get(
+                                            "alt_geom"
+                                        )
+                                        alt_str = f"{alt}ft" if alt else "N/A"
+                                        print(f"    {flight} - {alt_str}")
+                            except Exception as e:
+                                print(f"Error updating console: {e}")
+                    else:
+                        # No data available, update displays with error state
+                        if self.lcd_controller:
+                            try:
+                                self.lcd_controller.display_error("No data")
+                            except Exception as e:
+                                print(f"Error updating LCD with error: {e}")
+
+                        if self.oled_controller:
+                            try:
+                                self.oled_controller.display_error("No data")
+                            except Exception as e:
+                                print(f"Error updating OLED with error: {e}")
+
                     time.sleep(interval)
                 except Exception as e:
                     print(f"Error in monitoring loop: {e}")

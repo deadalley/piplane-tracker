@@ -274,61 +274,6 @@ class PiPlaneOLEDController:
         self.display.image(self.image)
         self.display.show()
 
-    def start_cycling_display(self, aircraft_data_func, interval=3):
-        """
-        Start cycling through aircraft information on display
-
-        Args:
-            aircraft_data_func: Function that returns current aircraft data
-            interval (int): Display cycle interval in seconds
-        """
-        self.display_active = True
-
-        def display_loop():
-            while self.display_active:
-                try:
-                    aircraft_data = aircraft_data_func()
-
-                    if not aircraft_data or "aircraft" not in aircraft_data:
-                        self.display_error("No data")
-                        time.sleep(interval)
-                        continue
-
-                    aircraft_list = aircraft_data["aircraft"]
-
-                    if not aircraft_list:
-                        self.display_no_aircraft()
-                        time.sleep(interval)
-                        continue
-
-                    # First show the count
-                    self.display_aircraft_count(len(aircraft_list))
-                    time.sleep(interval)
-
-                    # Then cycle through individual aircraft
-                    self.total_pages = len(aircraft_list)
-                    for i, aircraft in enumerate(aircraft_list):
-                        if not self.display_active:
-                            break
-
-                        page_info = f"{i+1}/{self.total_pages}"
-                        self.display_aircraft_info(aircraft, page_info)
-                        self.current_page = i
-                        time.sleep(interval)
-
-                except Exception as e:
-                    print(f"Error in OLED display loop: {e}")
-                    self.display_error("Display error")
-                    time.sleep(interval)
-
-        display_thread = threading.Thread(target=display_loop, daemon=True)
-        display_thread.start()
-
-    def stop_cycling_display(self):
-        """Stop the cycling display"""
-        self.display_active = False
-        self.clear_display()
-
     def display_system_info(self):
         """Display system information"""
         if not self.show_display():
@@ -348,7 +293,6 @@ class PiPlaneOLEDController:
 
     def cleanup(self):
         """Cleanup OLED resources"""
-        self.stop_cycling_display()
         if self.display:
             try:
                 if not self.show_display():
@@ -363,46 +307,3 @@ class PiPlaneOLEDController:
                 self.clear_display()
             except Exception as e:
                 print(f"Error during OLED cleanup: {e}")
-
-
-# Test function for OLED
-def test_oled():
-    """Test the OLED functionality"""
-    oled_controller = PiPlaneOLEDController()
-
-    # Test basic display
-    oled_controller.display_startup_message()
-
-    # Test aircraft count display
-    oled_controller.display_aircraft_count(5, 2)
-    time.sleep(3)
-
-    # Test individual aircraft display
-    test_aircraft = {
-        "flight": "UAL123",
-        "hex": "A12345",
-        "alt_baro": 35000,
-        "gs": 450,
-        "track": 270,
-        "lat": 37.7749,
-        "lon": -122.4194,
-    }
-    oled_controller.display_aircraft_info(test_aircraft, "1/3")
-    time.sleep(3)
-
-    # Test alert
-    oled_controller.display_alert(2, "UAL123")
-
-    # Test no aircraft
-    oled_controller.display_no_aircraft()
-    time.sleep(3)
-
-    # Test system info
-    oled_controller.display_system_info()
-    time.sleep(3)
-
-    oled_controller.cleanup()
-
-
-if __name__ == "__main__":
-    test_oled()

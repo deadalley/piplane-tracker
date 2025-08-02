@@ -57,14 +57,6 @@ def main():
             print("  - Updates every 5 seconds")
             return
 
-    # Initialize alert system
-    try:
-        alert_system = PiPlaneMonitor()
-        print("✅ Alert system initialized")
-    except Exception as e:
-        print(f"⚠️  Alert system initialization failed: {e}")
-        alert_system = None
-
     # Initialize LCD controller (if enabled)
     lcd_controller = None
     if lcd_enabled:
@@ -86,6 +78,16 @@ def main():
             print(f"⚠️  OLED controller initialization failed: {e}")
             oled_controller = None
 
+    # Initialize monitor system with display controllers
+    try:
+        monitor = PiPlaneMonitor(
+            lcd_controller=lcd_controller, oled_controller=oled_controller
+        )
+        print("✅ Monitor system initialized")
+    except Exception as e:
+        print(f"⚠️  Monitor system initialization failed: {e}")
+        monitor = None
+
     # Test initial data connection
     print("\nTesting data connection...")
     try:
@@ -104,54 +106,23 @@ def main():
     print("Press Ctrl+C to stop")
 
     try:
-        # Start alert system monitoring
-        if alert_system:
-            alert_system.start_monitoring(5)
-            print("Alert monitoring started")
+        # Start unified monitoring loop
+        if monitor:
+            monitor.start_monitoring(interval=5)  # Single interval for all updates
+            print("Unified monitoring started")
 
-        # Start LCD cycling
-        if lcd_controller and alert_system:
-            lcd_controller.start_cycling_display(alert_system.read_aircraft_data, 5)
-            print("LCD display started")
-
-        # Start OLED cycling
-        if oled_controller and alert_system:
-            oled_controller.start_cycling_display(alert_system.read_aircraft_data, 3)
-            print("OLED display started")
-
-        # Main console loop
+        # Main application loop - just keep alive
         import time
 
         while True:
-            if alert_system:
-                aircraft_data = alert_system.read_aircraft_data()
-                if aircraft_data and "aircraft" in aircraft_data:
-                    aircraft_count = len(aircraft_data["aircraft"])
-                    timestamp = datetime.now().strftime("%H:%M:%S")
-                    print(f"[{timestamp}] Aircraft detected: {aircraft_count}")
-
-                    # Show aircraft with callsigns
-                    with_callsign = [
-                        a
-                        for a in aircraft_data["aircraft"]
-                        if a.get("flight", "").strip()
-                    ]
-                    if with_callsign:
-                        print(f"  Aircraft with callsigns: {len(with_callsign)}")
-                        for aircraft in with_callsign[:5]:  # Show first 5
-                            flight = aircraft.get("flight", "").strip()
-                            alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
-                            alt_str = f"{alt}ft" if alt else "N/A"
-                            print(f"    {flight} - {alt_str}")
-
-            time.sleep(10)  # Update every 10 seconds in console mode
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("\nShutting down...")
     finally:
         # Cleanup
-        if alert_system:
-            alert_system.stop_monitoring()
+        if monitor:
+            monitor.stop_monitoring()
         if lcd_controller:
             lcd_controller.cleanup()
         if oled_controller:
