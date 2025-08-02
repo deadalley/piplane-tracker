@@ -1,296 +1,165 @@
-# Airplane Tracker System
+<div align="center">
+  <img src="public/logo.svg" alt="PiPlane Tracker" width="200"/>
+  
+  # 🛩️ PiPlane Tracker
+  
+  **Real-time aircraft monitoring system for Raspberry Pi**
+  
+  [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/downloads/)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-red.svg)](https://www.raspberrypi.org/)
+  [![ADS-B](https://img.shields.io/badge/ADS--B-dump1090--fa-orange.svg)](https://github.com/flightaware/dump1090)
+  
+  Track aircraft in real-time using ADS-B data with LCD/OLED display support.
+  
+  [Installation](#installation) • [Hardware](#hardware) • [Usage](#usage) • [Contributing](#contributing)
+</div>
 
-A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft using dump1090-fa data, provides alerts for new aircraft, and displays information on LCD and OLED screens.
+---
 
-## Features
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        📡
+        <br><strong>Real-time Tracking</strong>
+        <br>Monitor aircraft as they enter your coverage area
+      </td>
+      <td align="center">
+        🖥️
+        <br><strong>Multi-Display Support</strong>
+        <br>LCD (16x2) and OLED (128x32) display compatibility
+      </td>
+      <td align="center">
+        📈
+        <br><strong>Enhanced Data</strong>
+        <br>OpenSky Network API integration for enriched information
+      </td>
+    </tr>
+  </table>
+</div>
 
-- 🛩️ **Real-time Aircraft Monitoring**: Reads aircraft data from dump1090-fa
-- 🚨 **New Aircraft Alerts**: Visual and audio alerts when new aircraft enter range
--  **LCD Display**: Shows aircraft information on connected LCD screen (using rpi-lcd)
-- 🖥️ **OLED Display**: Compact display on 0.91" I2C OLED screen (SSD1306)
-- 📊 **Aircraft Tracking**: Maintains history of detected aircraft
-- 🔄 **Continuous Monitoring**: Automatic updates every 5 seconds
-- 📱 **Console Mode**: Headless operation with console output
-
-## Requirements
-
-### Hardware
-- Raspberry Pi (any model with GPIO)
-- RTL-SDR dongle for aircraft reception
-- 16x2 LCD display (optional, connected via GPIO)
-- 0.91" I2C OLED display (optional, typically SSD1306 128x32)
-- Speaker or buzzer for audio alerts (optional)
-
-### Software
-- Python 3.6+
-- dump1090-fa (for aircraft data reception)
-- Required Python packages (see requirements)
+---
 
 ## Installation
 
-1. **Clone or download the project files**:
+### Prerequisites
+
+- **Raspberry Pi** (3B+ or newer)
+- **Python 3.7+**
+- **dump1090-fa** (FlightAware ADS-B decoder)
+- **RTL-SDR dongle** or similar ADS-B receiver
+
+### Hardware Setup
+
+- **LCD Display (16x2)**: Connect via I2C (SDA/SCL pins)
+- **OLED Display (128x32)**: Connect via I2C (default address 0x3C)
+- **RTL-SDR**: USB connection for ADS-B reception
+
+### Configuration
+- Edit the `config` to customize the behavior of the application
+
+### Quick Start
+
+1. **Clone the repository**
    ```bash
-   cd /home/pi/Documents/airplane-tracker
+   git clone https://github.com/your-username/piplane-tracker.git
+   cd piplane-tracker
    ```
 
-2. **Install Python dependencies**:
+2. **Install Python dependencies**
    ```bash
    pip3 install -r requirements
    ```
 
-3. **Install and configure dump1090-fa** (if not already installed):
+3. **Set up dump1090-fa** (if not already installed)
    ```bash
    sudo apt update
    sudo apt install dump1090-fa
-   sudo systemctl enable dump1090-fa
-   sudo systemctl start dump1090-fa
    ```
 
-4. **Connect LCD (optional)**:
-   - Connect 16x2 LCD to GPIO pins as configured in `lcd_controller.py`
-   - Default pin configuration:
-     - RS: GPIO 26
-     - Enable: GPIO 19
-     - D4: GPIO 13
-     - D5: GPIO 6
-     - D6: GPIO 5
-     - D7: GPIO 11
+4. **Configure your settings**
+   ```bash
+   nano config
+   ```
 
-5. **Connect OLED (optional)**:
-   - Connect 0.91" I2C OLED display to I2C pins
-   - Default connections:
-     - VCC: 3.3V
-     - GND: Ground
-     - SDA: GPIO 2 (Pin 3)
-     - SCL: GPIO 3 (Pin 5)
-   - Default I2C address: 0x3C
+5. **Run the tracker**
+   ```bash
+   python main.py
+   ```
+
+## Hardware
+
+### Supported Hardware
+
+| Component | Model                 | Notes                                  |
+| --------- | --------------------- | -------------------------------------- |
+| **SBC**   | Raspberry Pi 3B+ / 4B | Recommended for best performance       |
+| **LCD**   | 16x2 I2C LCD          | HD44780 compatible                     |
+| **OLED**  | 128x32 SSD1306        | I2C interface                          |
+| **ADS-B** | RTL-SDR v3            | Or any dump1090-fa compatible receiver |
+
+### Wiring Diagram
+
+```
+Raspberry Pi GPIO Layout:
+                     
+    3V3  (1) (2)  5V     
+   GPIO2 (3) (4)  5V     ← LCD VCC
+   GPIO3 (5) (6)  GND    ← LCD/OLED GND  
+   GPIO4 (7) (8)  GPIO14
+     GND (9) (10) GPIO15
+  GPIO17 (11)(12) GPIO18
+  GPIO27 (13)(14) GND
+  GPIO22 (15)(16) GPIO23
+    3V3 (17)(18) GPIO24
+  GPIO10 (19)(20) GND
+   GPIO9 (21)(22) GPIO25
+  GPIO11 (23)(24) GPIO8
+     GND (25)(26) GPIO7
+
+I2C Connections:
+- SDA: GPIO2 (Pin 3)  → LCD/OLED SDA
+- SCL: GPIO3 (Pin 5)  → LCD/OLED SCL
+- VCC: 5V (Pin 2/4)   → LCD VCC
+- VCC: 3V3 (Pin 1)    → OLED VCC (3.3V)
+- GND: GND (Pin 6)    → LCD/OLED GND
+```
+
+### I2C Device Detection
+
+Verify your displays are detected:
+
+```bash
+sudo i2cdetect -y 1
+```
+
+Expected output:
+```
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+20: -- -- -- -- -- -- -- 27 -- -- -- -- -- -- -- -- 
+30: -- -- -- -- -- -- -- -- -- -- -- -- 3c -- -- -- 
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+70: -- -- -- -- -- -- -- --
+```
+- `27` = LCD Display (I2C address 0x27)
+- `3c` = OLED Display (I2C address 0x3C)
+
 
 ## Usage
 
-### Console Mode
-```bash
-python3 main.py
-```
+### Monitoring Mode
 
-### Additional Options
-```bash
-python3 main.py --help                      # Show help
-```
-
-## File Structure
-
-```
-airplane-tracker/
-├── main.py               # Main application entry point (Console + LCD + OLED + Alerts)
-├── aircraft_data.py      # Core aircraft data reading and country detection
-├── aircraft_display.py   # Aircraft information display and formatting
-├── display_utils.py      # Utility functions for data formatting
-├── alert_system.py       # New aircraft detection and alerts
-├── lcd_controller.py     # LCD display management
-├── oled_controller.py    # OLED display management
-├── flight_enhancer.py    # Optional flight data enhancement from APIs
-├── config.py             # Configuration management
-├── config                # Configuration file (editable)
-├── requirements          # Python dependencies
-└── README.md             # This file
-```
-
-## Configuration
-
-### Configuration File (config)
-The application uses a flat `config` file for all settings. Edit this file to customize:
-
-```
-# Airplane Tracker Configuration
-# Edit these values to customize your airplane tracker settings
-
-# Data Source Settings
-data_source_file_path=/var/run/dump1090-fa/aircraft.json
-data_source_update_interval=5
-data_source_timeout=10
-
-# Display Settings
-display_lcd_enabled=true
-display_oled_enabled=true
-
-# LCD Configuration
-lcd_pin_rs=26
-lcd_pin_enable=19
-lcd_pin_d4=13
-lcd_pin_d5=6
-lcd_pin_d6=5
-lcd_pin_d7=11
-lcd_update_interval=5
-
-# OLED Configuration
-oled_width=128
-oled_height=32
-oled_i2c_address=60
-oled_update_interval=3
-
-# Alert Settings
-alerts_enabled=true
-alerts_filter_by_callsign=true
-alerts_aircraft_timeout=300
-
-# Logging Settings (optional)
-logging_enabled=false
-logging_file_path=aircraft_log.txt
-logging_level=INFO
-
-# Enhancement Settings (API data - optional)
-enhancement_enabled=false
-enhancement_cache_timeout=300
-enhancement_api_rate_limit=1
-```
-
-### Legacy Configuration Methods
-You can still override settings programmatically:
-
-### LCD Pin Configuration
-Edit `lcd_controller.py` to change LCD pin connections:
-```python
-lcd_controller = AirplaneLCDController({
-    'rs': 26, 'enable': 19, 'd4': 13, 
-    'd5': 6, 'd6': 5, 'd7': 11
-})
-```
-
-### OLED Configuration
-Edit `oled_controller.py` to change OLED settings:
-```python
-oled_controller = AirplaneOLEDController(
-    width=128, height=32, i2c_address=0x3C
-)
-```
-
-### Update Intervals
-Modify update intervals in `main.py`:
-- Console updates: 10 seconds
-- Alert checking: 5 seconds
-- LCD/OLED updates: 5/3 seconds respectively
-
-### Data Source
-The system reads from `/var/run/dump1090-fa/aircraft.json` by default. 
-Change the path in the `config` file:
-```
-data_source_file_path=/your/custom/path/aircraft.json
-```## Features Explained
-
-### Console Mode
-- **Real-time Monitoring**: Displays aircraft count and activity in the terminal
-- **Aircraft Details**: Shows callsigns and altitudes for aircraft with identification
-- **Status Updates**: Regular updates every 10 seconds
-
-### LCD Display
-- **Cycling Display**: Automatically cycles through aircraft information
-- **Aircraft Count**: Shows total number of detected aircraft
-- **Individual Aircraft**: Displays callsign, altitude, and speed
-- **Alerts**: Special alert display for new aircraft
-
-### OLED Display
-- **Compact View**: Optimized for 128x32 pixel display
-- **Fast Updates**: 3-second cycle time for quick information
-- **Aircraft Details**: Shows flight, altitude, speed, heading, and GPS status
-- **Visual Alerts**: Special alert screens for new aircraft
-- **System Info**: Time and status information
-
-### Alert System
-- **New Aircraft Detection**: Identifies when aircraft first enter range
-- **Visual Alerts**: LCD and OLED notifications
-- **Aircraft History**: Maintains record of all detected aircraft
-
-## Troubleshooting
-
-### Common Issues
-
-1. **No aircraft data**:
-   - Ensure dump1090-fa is running: `sudo systemctl status dump1090-fa`
-   - Check data file exists: `ls -la /var/run/dump1090-fa/aircraft.json`
-   - Verify RTL-SDR dongle is connected and working
-
-2. **LCD not working**:
-   - Check GPIO connections
-   - Verify rpi-lcd installation: `pip3 show rpi-lcd`
-   - Run LCD test: `python3 lcd_controller.py`
-
-3. **OLED not working**:
-   - Check I2C connections (SDA/SCL)
-   - Enable I2C: `sudo raspi-config` → Interface Options → I2C → Enable
-   - Check I2C address: `sudo i2cdetect -y 1` (should show 0x3C)
-   - Verify OLED libraries: `pip3 show adafruit-circuitpython-ssd1306`
-   - Run OLED test: `python3 oled_controller.py`
-
-5. **Permission errors**:
-   - Run with appropriate permissions
-   - Check file permissions: `ls -la /var/run/dump1090-fa/`
-
-### Testing Individual Components
-
-Test the LCD:
-```bash
-python3 lcd_controller.py
-```
-
-Test the OLED:
-```bash
-python3 oled_controller.py
-```
-
-Test basic aircraft data reading:
-```bash
-python3 -c "from aircraft_data import read_aircraft_data; print(read_aircraft_data())"
-```
-
-## Advanced Usage
-
-### Running as a Service
-To run automatically at startup, create a systemd service:
-
-1. Create service file:
-   ```bash
-   sudo nano /etc/systemd/system/airplane-tracker.service
-   ```
-
-2. Add content:
-   ```ini
-   [Unit]
-   Description=Airplane Tracker
-   After=dump1090-fa.service
-   
-   [Service]
-   Type=simple
-   User=pi
-   WorkingDirectory=/home/pi/Documents/airplane-tracker
-   ExecStart=/usr/bin/python3 main.py
-   Restart=always
-   
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-3. Enable and start:
-   ```bash
-   sudo systemctl enable airplane-tracker
-   sudo systemctl start airplane-tracker
-   ```
+When you select **Monitor**, the system will continuously scan for new aircrafts and display alerts with the available information for that aircraft when a new one is detected.
 
 ## Contributing
 
-Feel free to contribute improvements:
-- Additional aircraft data fields
-- Database logging
-- Web interface
-- Mobile notifications
+Feel free to open an issue or PR.
 
 ## License
 
-This project is open source. Use and modify as needed for your aircraft tracking requirements.
-
-## Support
-
-For issues related to:
-- **dump1090-fa**: Check FlightAware documentation
-- **LCD connections**: Verify GPIO wiring
-- **RTL-SDR**: Ensure proper drivers and antenna setup
-- **This software**: Check the troubleshooting section above
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
