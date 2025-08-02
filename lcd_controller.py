@@ -13,9 +13,7 @@ except ImportError:
 
 import time
 from datetime import datetime
-from typing import List, Dict
 import threading
-from config import get_config
 
 class AirplaneLCDController:
     def __init__(self):
@@ -35,10 +33,8 @@ class AirplaneLCDController:
                 print("LCD initialized successfully")
                 time.sleep(2)
             except Exception as e:
-                print(f"Failed to initialize LCD: {e}")
                 self.lcd = None
-        else:
-            print("LCD not available - running in simulation mode")
+                raise e
     
     def clear_display(self):
         if self.lcd:
@@ -57,13 +53,7 @@ class AirplaneLCDController:
                     self.lcd.text(line2[:16], 2)
             except Exception as e:
                 print(f"Error displaying on LCD: {e}")
-        else:
-            # Simulate LCD output to console
-            print("=" * 18)
-            print(f"| {line1:<16} |")
-            print(f"| {line2:<16} |")
-            print("=" * 18)
-    
+
     def display_startup_message(self):
         """Display startup message"""
         self.display_text("Airplane Tracker", "Starting up...")
@@ -77,7 +67,7 @@ class AirplaneLCDController:
             total_count (int): Total aircraft detected
             new_count (int): New aircraft count (optional)
         """
-        line1 = f"Aircraft: {total_count}"
+        line1 = f"Aircrafts: {total_count}"
         line2 = f"New: {new_count}" if new_count > 0 else f"Time: {datetime.now().strftime('%H:%M')}"
         self.display_text(line1, line2)
     

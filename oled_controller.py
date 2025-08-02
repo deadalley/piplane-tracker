@@ -49,14 +49,14 @@ class AirplaneOLEDController:
                 i2c = busio.I2C(board.SCL, board.SDA)
                 
                 # Initialize display
-                self.display = SSD1306_I2C(width, height, i2c, addr=i2c_address)
+                self.display = SSD1306_I2C(self.width, self.height, i2c, addr=i2c_address)
                 
                 # Clear display
                 self.display.fill(0)
                 self.display.show()
                 
                 # Create image for drawing
-                self.image = Image.new("1", (width, height))
+                self.image = Image.new("1", (self.width, self.height))
                 self.draw = ImageDraw.Draw(self.image)
                 
                 # Try to load a font (fallback to default if not available)
@@ -71,21 +71,15 @@ class AirplaneOLEDController:
                 print("OLED initialized successfully")
                 
             except Exception as e:
-                print(f"Failed to initialize OLED: {e}")
                 self.display = None
-        else:
-            print("OLED not available - running in simulation mode")
+                raise e
     
     def clear_display(self):
-        """Clear the OLED display"""
         if self.display:
             self.display.fill(0)
             self.display.show()
-        else:
-            print("OLED: [CLEARED]")
     
     def draw_text(self, text, x, y, font=None):
-        """Draw text on the display"""
         if not font:
             font = self.font_small
         self.draw.text((x, y), text, font=font, fill=255)
