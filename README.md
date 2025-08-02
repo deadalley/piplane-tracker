@@ -74,10 +74,6 @@ python3 main.py
 
 ### Additional Options
 ```bash
-python3 main.py --no-lcd                    # Disable LCD display
-python3 main.py --no-oled                   # Disable OLED display
-python3 main.py --oled-only                 # Use OLED only (disable LCD)
-python3 main.py --sound=/path/to/alert.wav  # Custom alert sound
 python3 main.py --help                      # Show help
 ```
 
@@ -95,8 +91,8 @@ airplane-tracker/
 ├── flight_enhancer.py    # Optional flight data enhancement from APIs
 ├── config.py             # Configuration management
 ├── config                # Configuration file (editable)
-├── requirements.txt      # Python dependencies
-└── README.md            # This file
+├── requirements          # Python dependencies
+└── README.md             # This file
 ```
 
 ## Configuration
@@ -134,8 +130,6 @@ oled_update_interval=3
 
 # Alert Settings
 alerts_enabled=true
-alerts_sound_enabled=false
-alerts_sound_file=
 alerts_filter_by_callsign=true
 alerts_aircraft_timeout=300
 
@@ -203,7 +197,6 @@ data_source_file_path=/your/custom/path/aircraft.json
 
 ### Alert System
 - **New Aircraft Detection**: Identifies when aircraft first enter range
-- **Audio Alerts**: Optional sound notifications
 - **Visual Alerts**: LCD and OLED notifications
 - **Aircraft History**: Maintains record of all detected aircraft
 
@@ -281,12 +274,6 @@ To run automatically at startup, create a systemd service:
    sudo systemctl enable airplane-tracker
    sudo systemctl start airplane-tracker
    ```
-
-### Custom Alert Sounds
-Add custom alert sounds by placing WAV files in the project directory and using:
-```bash
-python3 main.py --sound=alert.wav
-```
 
 ## Contributing
 

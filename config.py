@@ -109,8 +109,6 @@ class AirplaneTrackerConfig:
             
             # Alerts
             'alerts_enabled': True,
-            'alerts_sound_enabled': False,
-            'alerts_sound_file': '',
             'alerts_filter_by_callsign': True,
             'alerts_aircraft_timeout': 300,
             
@@ -210,15 +208,7 @@ class AirplaneTrackerConfig:
     def are_alerts_enabled(self) -> bool:
         """Check if alerts are enabled"""
         return self.get_bool('alerts_enabled', True)
-    
-    def is_sound_enabled(self) -> bool:
-        """Check if sound alerts are enabled"""
-        return self.get_bool('alerts_sound_enabled', False)
-    
-    def get_sound_file(self) -> str:
-        """Get alert sound file path"""
-        return self.get_str('alerts_sound_file', '')
-    
+
     def should_filter_by_callsign(self) -> bool:
         """Check if should filter alerts by callsign"""
         return self.get_bool('alerts_filter_by_callsign', True)
@@ -252,60 +242,6 @@ class AirplaneTrackerConfig:
     def get_enhancement_api_rate_limit(self) -> int:
         """Get enhancement API rate limit in seconds"""
         return self.get_int('enhancement_api_rate_limit', 1)
-    
-    def save_config(self):
-        """Save current configuration to file"""
-        try:
-            with open(self.config_file, 'w') as f:
-                f.write("# Airplane Tracker Configuration\n")
-                f.write("# Edit these values to customize your airplane tracker settings\n\n")
-                
-                # Data Source Settings
-                f.write("# Data Source Settings\n")
-                f.write(f"data_source_file_path={self.get_data_source_path()}\n")
-                f.write(f"data_source_update_interval={self.get_data_source_update_interval()}\n")
-                f.write(f"data_source_timeout={self.get_data_source_timeout()}\n\n")
-                
-                # Display Settings
-                f.write("# Display Settings\n")
-                f.write(f"display_lcd_enabled={str(self.is_lcd_enabled()).lower()}\n")
-                f.write(f"display_oled_enabled={str(self.is_oled_enabled()).lower()}\n\n")
-                
-                # LCD Configuration
-                f.write("# LCD Configuration\n")
-                f.write(f"lcd_update_interval={self.get_lcd_update_interval()}\n\n")
-                
-                # OLED Configuration
-                f.write("# OLED Configuration\n")
-                f.write(f"oled_width={self.get_oled_width()}\n")
-                f.write(f"oled_height={self.get_oled_height()}\n")
-                f.write(f"oled_i2c_address={self.get_oled_i2c_address()}\n")
-                f.write(f"oled_update_interval={self.get_oled_update_interval()}\n\n")
-                
-                # Alert Settings
-                f.write("# Alert Settings\n")
-                f.write(f"alerts_enabled={str(self.are_alerts_enabled()).lower()}\n")
-                f.write(f"alerts_sound_enabled={str(self.is_sound_enabled()).lower()}\n")
-                f.write(f"alerts_sound_file={self.get_sound_file()}\n")
-                f.write(f"alerts_filter_by_callsign={str(self.should_filter_by_callsign()).lower()}\n")
-                f.write(f"alerts_aircraft_timeout={self.get_aircraft_timeout()}\n\n")
-                
-                # Logging Settings
-                f.write("# Logging Settings\n")
-                f.write(f"logging_enabled={str(self.is_logging_enabled()).lower()}\n")
-                f.write(f"logging_file_path={self.get_log_file_path()}\n")
-                f.write(f"logging_level={self.get_log_level()}\n\n")
-                
-                # Enhancement Settings
-                f.write("# Enhancement Settings (API data)\n")
-                f.write(f"enhancement_enabled={str(self.is_enhancement_enabled()).lower()}\n")
-                f.write(f"enhancement_cache_timeout={self.get_enhancement_cache_timeout()}\n")
-                f.write(f"enhancement_api_rate_limit={self.get_enhancement_api_rate_limit()}\n")
-                
-            print(f"Configuration saved to '{self.config_file}'")
-            
-        except Exception as e:
-            print(f"Error saving config file: {e}")
 
 # Global configuration instance
 _config_instance = None

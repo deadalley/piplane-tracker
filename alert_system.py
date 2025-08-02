@@ -9,31 +9,18 @@ import time
 from datetime import datetime
 from typing import Set, Dict, List
 import threading
-import pygame
 import os
 
 class AirplaneAlertSystem:
-    def __init__(self, alert_sound_path=None):
+    def __init__(self):
         """
         Initialize the alert system
-        
-        Args:
-            alert_sound_path (str): Path to alert sound file (optional)
         """
         self.known_aircraft: Set[str] = set()
         self.aircraft_history: Dict[str, dict] = {}
         self.alert_callbacks = []
         self.running = False
-        
-        # Initialize pygame mixer for sound alerts
-        pygame.mixer.init()
-        self.alert_sound = None
-        if alert_sound_path and os.path.exists(alert_sound_path):
-            try:
-                self.alert_sound = pygame.mixer.Sound(alert_sound_path)
-            except Exception as e:
-                print(f"Could not load alert sound: {e}")
-    
+
     def add_alert_callback(self, callback):
         """Add a callback function to be called when new aircraft are detected"""
         self.alert_callbacks.append(callback)
@@ -45,15 +32,7 @@ class AirplaneAlertSystem:
                 callback(new_aircraft)
             except Exception as e:
                 print(f"Error in alert callback: {e}")
-    
-    def _play_alert_sound(self):
-        """Play alert sound if available"""
-        if self.alert_sound:
-            try:
-                self.alert_sound.play()
-            except Exception as e:
-                print(f"Error playing alert sound: {e}")
-    
+
     def check_for_new_aircraft(self, aircraft_data: dict) -> List[dict]:
         """
         Check for new aircraft and return list of new ones
@@ -129,7 +108,6 @@ class AirplaneAlertSystem:
         # Trigger alerts for new aircraft
         if new_aircraft:
             self._trigger_alerts(new_aircraft)
-            self._play_alert_sound()
             
             # Print alert to console
             print(f"\n🚨 ALERT: {len(new_aircraft)} new aircraft detected!")

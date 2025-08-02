@@ -24,7 +24,7 @@ def signal_handler(sig, frame):
 def main():
     """Main application entry point"""
     print("=" * 60)
-    print("🛩️  Airplane Tracker System v1.0")
+    print("🛩️  PiPlane Tracker v1.0")
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
@@ -40,26 +40,12 @@ def main():
     # Parse command line arguments (override config)
     lcd_enabled = config.is_lcd_enabled()
     oled_enabled = config.is_oled_enabled()
-    alert_sound_path = config.get_sound_file()
     
     # Check for command line arguments
     for arg in sys.argv[1:]:
-        if arg == "--no-lcd":
-            lcd_enabled = False
-        elif arg == "--no-oled":
-            oled_enabled = False
-        elif arg == "--oled-only":
-            lcd_enabled = False
-            oled_enabled = True
-        elif arg.startswith("--sound="):
-            alert_sound_path = arg.split("=", 1)[1]
-        elif arg in ["--help", "-h"]:
+        if arg in ["--help", "-h"]:
             print("Usage: python3 main.py [options]")
             print("\nOptions:")
-            print("  --no-lcd          Disable LCD display")
-            print("  --no-oled         Disable OLED display")
-            print("  --oled-only       Use OLED only (disable LCD)")
-            print("  --sound=PATH      Path to alert sound file")
             print("  --help, -h        Show this help message")
             print("\nConfiguration:")
             print("  - Edit the 'config' file to change default settings")
@@ -71,12 +57,9 @@ def main():
             print("  - Updates every 5 seconds")
             return
     
-    # Initialize components
-    print("Initializing components...")
-    
     # Initialize alert system
     try:
-        alert_system = AirplaneAlertSystem(alert_sound_path)
+        alert_system = AirplaneAlertSystem()
         print("✅ Alert system initialized")
     except Exception as e:
         print(f"⚠️  Alert system initialization failed: {e}")
@@ -118,9 +101,6 @@ def main():
         print("   The application will continue but may not function properly")
     
     print("\nStarting application...")
-    
-    # Run in console mode
-    print("📺 Running in console mode...")
     print("Press Ctrl+C to stop")
     
     try:
@@ -172,7 +152,7 @@ def main():
         if oled_controller:
             oled_controller.cleanup()
     
-    print("Airplane tracker stopped.")
+    print("PiPlane Tracker stopped.")
 
 if __name__ == "__main__":
     main()
