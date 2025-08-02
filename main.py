@@ -133,7 +133,9 @@ def main():
     # Initialize monitor system
     try:
         monitor = PiPlaneMonitor(
-            lcd_controller=lcd_controller, oled_controller=oled_controller
+            file_path=config.get_data_source_path(),
+            lcd_controller=lcd_controller,
+            oled_controller=oled_controller,
         )
         print("✅ Monitor system initialized")
     except Exception as e:
@@ -152,7 +154,8 @@ def main():
                 input("\nPress Enter to continue...")
 
             elif choice == "M":
-                print("\n🔍 Starting aircraft monitoring...")
+                print("-" * 60)
+                print("🔍 Starting aircraft monitoring...")
                 print("-" * 60)
 
                 exit_requested = monitor.start_monitoring(interval=5)

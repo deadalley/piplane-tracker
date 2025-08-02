@@ -20,7 +20,6 @@ except ImportError:
 
 import time
 from datetime import datetime
-import threading
 from config import get_config
 
 
@@ -40,12 +39,6 @@ class PiPlaneOLEDController:
         self.width = width or config.get_oled_width()
         self.height = height or config.get_oled_height()
         i2c_address = i2c_address or config.get_oled_i2c_address()
-
-        self.display = None
-        self.display_active = False
-        self.current_page = 0
-        self.total_pages = 0
-        self.aircraft_data = []
 
         if OLED_AVAILABLE:
             try:
@@ -116,6 +109,29 @@ class PiPlaneOLEDController:
         self.display.show()
         time.sleep(2)
 
+    def display_idle_message(self):
+        """Display idle message while monitoring running and no aircraft are detected"""
+        if not self.show_display():
+            return
+
+        self.draw_text("PiPlane Tracker", 0, 0, self.font_medium)
+        self.draw_text("Monitoring for new aircrafts...", 0, 12, self.font_small)
+
+        self.display.image(self.image)
+        self.display.show()
+
+    def display_new_aircraft_detected(self, interval=2):
+        """Display message when new aircraft is detected"""
+        if not self.show_display():
+            return
+
+        self.draw_text("PiPlaneTracker", 0, 0, self.font_medium)
+        self.draw_text("New aircraft detected!", 0, 12, self.font_small)
+
+        self.display.image(self.image)
+        self.display.show()
+        time.sleep(interval)
+
     def display_aircraft_count(self, total_count, new_count=0):
         """
         Display aircraft count summary
@@ -144,7 +160,7 @@ class PiPlaneOLEDController:
         self.display.image(self.image)
         self.display.show()
 
-    def display_aircraft_info(self, aircraft, page_info=""):
+    def display_aircraft_info(self, aircraft, page_info="", interval=2):
         """
         Display individual aircraft information
 
@@ -197,48 +213,7 @@ class PiPlaneOLEDController:
 
         self.display.image(self.image)
         self.display.show()
-
-    def display_alert(self, new_aircraft_count, flight_name=""):
-        """
-        Display alert for new aircraft
-
-        Args:
-            new_aircraft_count (int): Number of new aircraft
-            flight_name (str): Flight name if available
-        """
-        if not self.show_display():
-            return
-
-        # Alert header
-        self.draw_text("🚨 AIRCRAFT ALERT 🚨", 0, 0, self.font_small)
-
-        # New aircraft count
-        self.draw_text(f"New Aircraft: {new_aircraft_count}", 0, 11, self.font_medium)
-
-        # Flight name if available
-        if flight_name:
-            flight_display = flight_name[:16]  # Truncate if too long
-            self.draw_text(f"Flight: {flight_display}", 0, 22, self.font_small)
-        else:
-            self.draw_text("Unknown flight", 0, 22, self.font_small)
-
-        self.display.image(self.image)
-        self.display.show()
-        time.sleep(3)  # Show alert for 3 seconds
-
-    def display_no_aircraft(self):
-        """Display message when no aircraft are detected"""
-        if not self.show_display():
-            return
-
-        self.draw_text("AIRPLANE TRACKER", 0, 0, self.font_small)
-        self.draw_text("No Aircraft", 0, 11, self.font_medium)
-        self.draw_text(
-            f"Scanning... {datetime.now().strftime('%H:%M:%S')}", 0, 22, self.font_small
-        )
-
-        self.display.image(self.image)
-        self.display.show()
+        time.sleep(interval)
 
     def display_error(self, error_msg):
         """
@@ -259,22 +234,6 @@ class PiPlaneOLEDController:
                 self.draw_text(error_msg[20:40], 0, 22, self.font_small)
         else:
             self.draw_text(error_msg, 0, 11, self.font_small)
-
-        self.display.image(self.image)
-        self.display.show()
-
-    def display_system_info(self):
-        """Display system information"""
-        if not self.show_display():
-            return
-
-        self.draw_text("SYSTEM INFO", 0, 0, self.font_small)
-        self.draw_text(
-            f"Time: {datetime.now().strftime('%H:%M:%S')}", 0, 10, self.font_small
-        )
-        self.draw_text(
-            f"Date: {datetime.now().strftime('%m/%d')}", 0, 20, self.font_small
-        )
 
         self.display.image(self.image)
         self.display.show()

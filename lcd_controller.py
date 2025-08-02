@@ -15,16 +15,11 @@ except ImportError:
 
 import time
 from datetime import datetime
-import threading
 
 
 class PiPlaneLCDController:
     def __init__(self):
         self.lcd = None
-        self.display_active = False
-        self.current_display_data = []
-        self.display_index = 0
-        self.last_update = None
 
         if LCD_AVAILABLE:
             try:
@@ -48,8 +43,17 @@ class PiPlaneLCDController:
 
     def display_startup_message(self):
         """Display startup message"""
-        self.display_text("PiPlane Tracker", "Starting up...")
+        self.display_text("PiPlane Tracker", "Initializing...")
         time.sleep(2)
+
+    def display_idle_message(self):
+        """Display idle message while monitoring running and no aircraft are detected"""
+        self.display_text("PiPlane Tracker", "Monitoring...")
+
+    def display_new_aircraft_detected(self, interval=2):
+        """Display message when new aircraft is detected"""
+        self.display_text("New aircraft", "detected!")
+        time.sleep(interval)
 
     def display_aircraft_count(self, total_count, new_count=0):
         """
@@ -67,7 +71,7 @@ class PiPlaneLCDController:
         )
         self.display_text(line1, line2)
 
-    def display_aircraft_info(self, aircraft):
+    def display_aircraft_info(self, aircraft, interval=2):
         """
         Display individual aircraft information
 
@@ -96,13 +100,7 @@ class PiPlaneLCDController:
             line2 = "No alt/speed"
 
         self.display_text(line1, line2[:16])
-
-    def display_alert(self, new_aircraft_count):
-        self.display_text("** ALERT **", f"New: {new_aircraft_count}")
-        time.sleep(3)  # Show alert for 3 seconds
-
-    def display_no_aircraft(self):
-        self.display_text("No Aircraft", f"Time: {datetime.now().strftime('%H:%M:%S')}")
+        time.sleep(interval)
 
     def display_error(self, error_msg):
         self.display_text("ERROR", error_msg[:16])
