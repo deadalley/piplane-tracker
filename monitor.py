@@ -6,7 +6,7 @@ Tracks new airplanes entering range and provides alerts
 
 import time
 from datetime import datetime
-from typing import Set, Dict, List, Optional
+from typing import Dict, List, Optional
 import threading
 import json
 import os
@@ -26,7 +26,6 @@ class PiPlaneMonitor:
             lcd_controller: LCD controller instance
             oled_controller: OLED controller instance
         """
-        self.known_aircraft: Set[str] = set()
         self.aircraft_history: Dict[str, dict] = {}
         self.alert_callbacks = []
         self.running = False
@@ -34,7 +33,12 @@ class PiPlaneMonitor:
         # Display controllers
         self.lcd_controller = lcd_controller
         self.oled_controller = oled_controller
-        self.console_enabled = True
+
+        # New aircraft display state
+        self.new_aircraft_queue: List[dict] = []
+        self.showing_new_aircraft = False
+        self.new_aircraft_display_time = 10  # seconds to show new aircraft info
+        self.new_aircraft_start_time = None
 
         # Set up data source path
         if file_path is None:
@@ -43,9 +47,109 @@ class PiPlaneMonitor:
         else:
             self.file_path = file_path
 
-    def set_console_enabled(self, enabled: bool):
-        """Enable or disable console output"""
-        self.console_enabled = enabled
+    def set_new_aircraft_display_time(self, seconds: int):
+        """Set how long to display new aircraft information"""
+        self.new_aircraft_display_time = seconds
+
+    def clear_new_aircraft_display(self):
+        """Manually clear the new aircraft display and return to count display"""
+        self.showing_new_aircraft = False
+        self.new_aircraft_queue.clear()
+        self.new_aircraft_start_time = None
+
+    def _should_show_new_aircraft(self) -> bool:
+        """Check if we should still be showing new aircraft"""
+        if not self.showing_new_aircraft or not self.new_aircraft_start_time:
+            return False
+
+        current_time = datetime.now()
+        elapsed = (current_time - self.new_aircraft_start_time).total_seconds()
+        return elapsed <= self.new_aircraft_display_time
+
+    def _update_display_state(self):
+        """Update the display state based on timing"""
+        if self.showing_new_aircraft and not self._should_show_new_aircraft():
+            self.showing_new_aircraft = False
+            self.new_aircraft_queue.clear()
+
+    def _update_lcd_display(
+        self, aircraft_list: List[dict], current_new_aircraft_index: int
+    ):
+        """Update LCD display based on current state"""
+        if not self.lcd_controller:
+            return
+
+        try:
+            if not aircraft_list:
+                self.lcd_controller.display_no_aircraft()
+            elif self.showing_new_aircraft and self.new_aircraft_queue:
+                # Show new aircraft information
+                aircraft_to_show = self.new_aircraft_queue[
+                    current_new_aircraft_index % len(self.new_aircraft_queue)
+                ]
+                self.lcd_controller.display_aircraft_info(aircraft_to_show)
+            else:
+                # Default: show aircraft count
+                new_count = (
+                    len(self.new_aircraft_queue) if self.showing_new_aircraft else 0
+                )
+                self.lcd_controller.display_aircraft_count(
+                    len(aircraft_list), new_count
+                )
+        except Exception as e:
+            print(f"Error updating LCD: {e}")
+
+    def _update_oled_display(
+        self, aircraft_list: List[dict], current_new_aircraft_index: int
+    ):
+        """Update OLED display based on current state"""
+        if not self.oled_controller:
+            return
+
+        try:
+            if not aircraft_list:
+                self.oled_controller.display_no_aircraft()
+            elif self.showing_new_aircraft and self.new_aircraft_queue:
+                # Show new aircraft information
+                aircraft_to_show = self.new_aircraft_queue[
+                    current_new_aircraft_index % len(self.new_aircraft_queue)
+                ]
+                page_info = (
+                    f"{(current_new_aircraft_index % len(self.new_aircraft_queue)) + 1}/{len(self.new_aircraft_queue)}"
+                    if len(self.new_aircraft_queue) > 1
+                    else ""
+                )
+                self.oled_controller.display_aircraft_info(aircraft_to_show, page_info)
+            else:
+                # Default: show aircraft count
+                new_count = (
+                    len(self.new_aircraft_queue) if self.showing_new_aircraft else 0
+                )
+                self.oled_controller.display_aircraft_count(
+                    len(aircraft_list), new_count
+                )
+        except Exception as e:
+            print(f"Error updating OLED: {e}")
+
+    def _update_console(self, aircraft_list: List[dict]):
+        """Update console output"""
+        try:
+            aircraft_count = len(aircraft_list)
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            status = " [SHOWING NEW]" if self.showing_new_aircraft else ""
+            print(f"[{timestamp}] Aircraft detected: {aircraft_count}{status}")
+
+            # Show aircraft with callsigns
+            with_callsign = [a for a in aircraft_list if a.get("flight", "").strip()]
+            if with_callsign:
+                print(f"  Aircraft with callsigns: {len(with_callsign)}")
+                for aircraft in with_callsign[:5]:  # Show first 5
+                    flight = aircraft.get("flight", "").strip()
+                    alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+                    alt_str = f"{alt}ft" if alt else "N/A"
+                    print(f"    {flight} - {alt_str}")
+        except Exception as e:
+            print(f"Error updating console: {e}")
 
     def read_aircraft_data(self) -> Optional[Dict]:
         """
@@ -86,6 +190,20 @@ class PiPlaneMonitor:
             except Exception as e:
                 print(f"Error in alert callback: {e}")
 
+    def _cleanup_old_aircraft(self, current_aircraft: set):
+        """Remove aircraft that haven't been seen for 5 minutes"""
+        current_time = datetime.now()
+        aircraft_to_remove = []
+
+        for hex_code in self.aircraft_history:
+            if hex_code not in current_aircraft:
+                last_seen = self.aircraft_history[hex_code]["last_seen"]
+                if (current_time - last_seen).total_seconds() > 300:  # 5 minutes
+                    aircraft_to_remove.append(hex_code)
+
+        for hex_code in aircraft_to_remove:
+            del self.aircraft_history[hex_code]
+
     def check_for_new_aircraft(self, aircraft_data: dict) -> List[dict]:
         """
         Check for new aircraft and return list of new ones
@@ -110,12 +228,11 @@ class PiPlaneMonitor:
             current_aircraft.add(hex_code)
 
             # Check if this is a new aircraft
-            if hex_code not in self.known_aircraft:
+            if hex_code not in self.aircraft_history:
                 # Only alert for aircraft with flight names/callsigns
                 flight = aircraft.get("flight", "").strip()
                 if flight:  # Only add to new_aircraft list if it has a flight name
                     new_aircraft.append(aircraft)
-                self.known_aircraft.add(hex_code)
 
                 # Store aircraft info in history
                 self.aircraft_history[hex_code] = {
@@ -148,22 +265,16 @@ class PiPlaneMonitor:
                             }
                         )
 
-        # Remove aircraft that are no longer in range (haven't been seen for 5 minutes)
-        current_time = datetime.now()
-        aircraft_to_remove = []
-
-        for hex_code in self.aircraft_history:
-            if hex_code not in current_aircraft:
-                last_seen = self.aircraft_history[hex_code]["last_seen"]
-                if (current_time - last_seen).total_seconds() > 300:  # 5 minutes
-                    aircraft_to_remove.append(hex_code)
-
-        for hex_code in aircraft_to_remove:
-            self.known_aircraft.discard(hex_code)
-            del self.aircraft_history[hex_code]
+        # Remove old aircraft that are no longer in range
+        self._cleanup_old_aircraft(current_aircraft)
 
         # Trigger alerts for new aircraft
         if new_aircraft:
+            # Add new aircraft to display queue
+            self.new_aircraft_queue.extend(new_aircraft)
+            self.showing_new_aircraft = True
+            self.new_aircraft_start_time = datetime.now()
+
             self._trigger_alerts(new_aircraft)
 
             # Print alert to console
@@ -180,7 +291,7 @@ class PiPlaneMonitor:
     def get_aircraft_summary(self) -> dict:
         """Get summary of tracked aircraft"""
         return {
-            "total_tracked": len(self.known_aircraft),
+            "total_tracked": len(self.aircraft_history),
             "aircraft_history": self.aircraft_history.copy(),
         }
 
@@ -193,102 +304,43 @@ class PiPlaneMonitor:
         """
         self.running = True
 
-        lcd_display_index = 0
-        oled_display_index = 0
-
         def monitor_loop():
-            nonlocal lcd_display_index, oled_display_index
+            current_new_aircraft_index = 0
 
             while self.running:
                 try:
                     aircraft_data = self.read_aircraft_data()
 
                     if aircraft_data:
-                        # Always check for new aircraft
+                        # Check for new aircraft and update displays
                         self.check_for_new_aircraft(aircraft_data)
-
                         aircraft_list = aircraft_data.get("aircraft", [])
 
-                        # Update LCD display
-                        if self.lcd_controller:
-                            try:
-                                if not aircraft_list:
-                                    self.lcd_controller.display_no_aircraft()
-                                else:
-                                    # Cycle through aircraft count and individual aircraft
-                                    if lcd_display_index == 0:
-                                        self.lcd_controller.display_aircraft_count(
-                                            len(aircraft_list)
-                                        )
-                                    else:
-                                        aircraft_idx = (lcd_display_index - 1) % len(
-                                            aircraft_list
-                                        )
-                                        self.lcd_controller.display_aircraft_info(
-                                            aircraft_list[aircraft_idx]
-                                        )
+                        # Update display state based on timing
+                        self._update_display_state()
 
-                                    lcd_display_index = (lcd_display_index + 1) % (
-                                        len(aircraft_list) + 1
-                                    )
-                            except Exception as e:
-                                print(f"Error updating LCD: {e}")
+                        # Update all displays
+                        self._update_lcd_display(
+                            aircraft_list, current_new_aircraft_index
+                        )
+                        self._update_oled_display(
+                            aircraft_list, current_new_aircraft_index
+                        )
+                        self._update_console(aircraft_list)
 
-                        # Update OLED display
-                        if self.oled_controller:
-                            try:
-                                if not aircraft_list:
-                                    self.oled_controller.display_no_aircraft()
-                                else:
-                                    # Cycle through aircraft count and individual aircraft
-                                    if oled_display_index == 0:
-                                        self.oled_controller.display_aircraft_count(
-                                            len(aircraft_list)
-                                        )
-                                    else:
-                                        aircraft_idx = (oled_display_index - 1) % len(
-                                            aircraft_list
-                                        )
-                                        self.oled_controller.display_aircraft_info(
-                                            aircraft_list[aircraft_idx]
-                                        )
+                        # Cycle through new aircraft if showing multiple
+                        if (
+                            self.showing_new_aircraft
+                            and len(self.new_aircraft_queue) > 1
+                        ):
+                            current_new_aircraft_index = (
+                                current_new_aircraft_index + 1
+                            ) % len(self.new_aircraft_queue)
+                        else:
+                            current_new_aircraft_index = 0
 
-                                    oled_display_index = (oled_display_index + 1) % (
-                                        len(aircraft_list) + 1
-                                    )
-                            except Exception as e:
-                                print(f"Error updating OLED: {e}")
-
-                        # Update console
-                        if self.console_enabled:
-                            try:
-                                aircraft_count = len(aircraft_list)
-                                timestamp = datetime.now().strftime("%H:%M:%S")
-                                print(
-                                    f"[{timestamp}] Aircraft detected: {aircraft_count}"
-                                )
-
-                                # Show aircraft with callsigns
-                                with_callsign = [
-                                    a
-                                    for a in aircraft_list
-                                    if a.get("flight", "").strip()
-                                ]
-                                if with_callsign:
-                                    print(
-                                        f"  Aircraft with callsigns: {len(with_callsign)}"
-                                    )
-                                    for aircraft in with_callsign[:5]:  # Show first 5
-                                        flight = aircraft.get("flight", "").strip()
-                                        alt = aircraft.get("alt_baro") or aircraft.get(
-                                            "alt_geom"
-                                        )
-                                        alt_str = f"{alt}ft" if alt else "N/A"
-                                        print(f"    {flight} - {alt_str}")
-                            except Exception as e:
-                                print(f"Error updating console: {e}")
                     else:
-                        # No data available, update displays with error state
+                        # No data available, show error on displays
                         if self.lcd_controller:
                             try:
                                 self.lcd_controller.display_error("No data")
