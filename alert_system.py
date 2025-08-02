@@ -6,20 +6,60 @@ Tracks new airplanes entering range and provides alerts
 
 import time
 from datetime import datetime
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Optional
 import threading
-from aircraft_data import read_aircraft_data
+import json
+import os
+from config import get_config
 
 
-class AirplaneAlertSystem:
-    def __init__(self):
+class PiPlaneMonitor:
+    def __init__(self, file_path: Optional[str] = None):
         """
         Initialize the alert system
+
+        Args:
+            file_path (str, optional): Path to the aircraft.json file.
+                                     If None, uses path from configuration.
         """
         self.known_aircraft: Set[str] = set()
         self.aircraft_history: Dict[str, dict] = {}
         self.alert_callbacks = []
         self.running = False
+
+        # Set up data source path
+        if file_path is None:
+            config = get_config()
+            self.file_path = config.get_data_source_path()
+        else:
+            self.file_path = file_path
+
+    def read_aircraft_data(self) -> Optional[Dict]:
+        """
+        Read aircraft data from the dump1090-fa JSON file
+
+        Returns:
+            dict: Aircraft data or None if file cannot be read
+        """
+        try:
+            if not os.path.exists(self.file_path):
+                print(f"Error: Aircraft data file not found at {self.file_path}")
+                print("Make sure dump1090-fa is running and the file path is correct.")
+                print("You can change the file path in the 'config' file")
+                return None
+
+            with open(self.file_path, "r") as file:
+                data = json.load(file)
+                return data
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON format in {self.file_path}: {e}")
+            return None
+        except PermissionError:
+            print(f"Error: Permission denied reading {self.file_path}")
+            return None
+        except Exception as e:
+            print(f"Error reading aircraft data: {e}")
+            return None
 
     def add_alert_callback(self, callback):
         """Add a callback function to be called when new aircraft are detected"""
@@ -144,7 +184,7 @@ class AirplaneAlertSystem:
         def monitor_loop():
             while self.running:
                 try:
-                    aircraft_data = read_aircraft_data()
+                    aircraft_data = self.read_aircraft_data()
                     if aircraft_data:
                         self.check_for_new_aircraft(aircraft_data)
                     time.sleep(interval)

@@ -6,11 +6,11 @@ Console-based airplane tracker with LCD/OLED display and alert system
 
 import sys
 import signal
+import os
 from datetime import datetime
 from config import get_config
 
-from aircraft_data import read_aircraft_data
-from alert_system import AirplaneAlertSystem
+from alert_system import PiPlaneMonitor
 from lcd_controller import AirplaneLCDController
 from oled_controller import AirplaneOLEDController
 
@@ -59,7 +59,7 @@ def main():
 
     # Initialize alert system
     try:
-        alert_system = AirplaneAlertSystem()
+        alert_system = PiPlaneMonitor()
         print("✅ Alert system initialized")
     except Exception as e:
         print(f"⚠️  Alert system initialization failed: {e}")
@@ -89,14 +89,12 @@ def main():
     # Test initial data connection
     print("\nTesting data connection...")
     try:
-        test_data = read_aircraft_data()
-        if test_data:
-            aircraft_count = len(test_data.get("aircraft", []))
-            print(
-                f"✅ Connected to dump1090-fa - {aircraft_count} aircraft currently detected"
-            )
+        config = get_config()
+        data_file_path = config.get_data_source_path()
+        if os.path.exists(data_file_path):
+            print(f"✅ Data file found at {data_file_path}")
         else:
-            print("⚠️  No data available from dump1090-fa")
+            print(f"⚠️  Data file not found at {data_file_path}")
             print("   Make sure dump1090-fa is running and the data file exists")
     except Exception as e:
         print(f"❌ Data connection test failed: {e}")
@@ -112,36 +110,39 @@ def main():
             print("Alert monitoring started")
 
         # Start LCD cycling
-        if lcd_controller:
-            lcd_controller.start_cycling_display(read_aircraft_data, 5)
+        if lcd_controller and alert_system:
+            lcd_controller.start_cycling_display(alert_system.read_aircraft_data, 5)
             print("LCD display started")
 
         # Start OLED cycling
-        if oled_controller:
-            oled_controller.start_cycling_display(read_aircraft_data, 3)
+        if oled_controller and alert_system:
+            oled_controller.start_cycling_display(alert_system.read_aircraft_data, 3)
             print("OLED display started")
 
         # Main console loop
         import time
 
         while True:
-            aircraft_data = read_aircraft_data()
-            if aircraft_data and "aircraft" in aircraft_data:
-                aircraft_count = len(aircraft_data["aircraft"])
-                timestamp = datetime.now().strftime("%H:%M:%S")
-                print(f"[{timestamp}] Aircraft detected: {aircraft_count}")
+            if alert_system:
+                aircraft_data = alert_system.read_aircraft_data()
+                if aircraft_data and "aircraft" in aircraft_data:
+                    aircraft_count = len(aircraft_data["aircraft"])
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    print(f"[{timestamp}] Aircraft detected: {aircraft_count}")
 
-                # Show aircraft with callsigns
-                with_callsign = [
-                    a for a in aircraft_data["aircraft"] if a.get("flight", "").strip()
-                ]
-                if with_callsign:
-                    print(f"  Aircraft with callsigns: {len(with_callsign)}")
-                    for aircraft in with_callsign[:5]:  # Show first 5
-                        flight = aircraft.get("flight", "").strip()
-                        alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
-                        alt_str = f"{alt}ft" if alt else "N/A"
-                        print(f"    {flight} - {alt_str}")
+                    # Show aircraft with callsigns
+                    with_callsign = [
+                        a
+                        for a in aircraft_data["aircraft"]
+                        if a.get("flight", "").strip()
+                    ]
+                    if with_callsign:
+                        print(f"  Aircraft with callsigns: {len(with_callsign)}")
+                        for aircraft in with_callsign[:5]:  # Show first 5
+                            flight = aircraft.get("flight", "").strip()
+                            alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+                            alt_str = f"{alt}ft" if alt else "N/A"
+                            print(f"    {flight} - {alt_str}")
 
             time.sleep(10)  # Update every 10 seconds in console mode
 
