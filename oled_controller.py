@@ -99,9 +99,14 @@ class PiPlaneOLEDController:
         if self.display:
             # Clear the image
             self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
+            return True
+        return False
 
     def display_startup_message(self):
         """Display startup message"""
+        if not self.show_display():
+            return
+
         self.draw_text("PiPlane Tracker", 0, 0, self.font_medium)
         self.draw_text("Initializing...", 0, 12, self.font_small)
         self.draw_text(
@@ -120,6 +125,9 @@ class PiPlaneOLEDController:
             total_count (int): Total aircraft detected
             new_count (int): New aircraft count
         """
+        if not self.show_display():
+            return
+
         # Title
         self.draw_text("AIRCRAFT TRACKER", 0, 0, self.font_small)
 
@@ -145,6 +153,9 @@ class PiPlaneOLEDController:
             aircraft (dict): Aircraft data
             page_info (str): Page information (e.g., "1/3")
         """
+        if not self.show_display():
+            return
+
         flight = aircraft.get("flight", "").strip()
         hex_code = aircraft.get("hex", "")
 
@@ -196,6 +207,9 @@ class PiPlaneOLEDController:
             new_aircraft_count (int): Number of new aircraft
             flight_name (str): Flight name if available
         """
+        if not self.show_display():
+            return
+
         # Alert header
         self.draw_text("🚨 AIRCRAFT ALERT 🚨", 0, 0, self.font_small)
 
@@ -215,6 +229,9 @@ class PiPlaneOLEDController:
 
     def display_no_aircraft(self):
         """Display message when no aircraft are detected"""
+        if not self.show_display():
+            return
+
         self.draw_text("AIRPLANE TRACKER", 0, 0, self.font_small)
         self.draw_text("No Aircraft", 0, 11, self.font_medium)
         self.draw_text(
@@ -231,6 +248,9 @@ class PiPlaneOLEDController:
         Args:
             error_msg (str): Error message to display
         """
+        if not self.show_display():
+            return
+
         self.draw_text("ERROR", 0, 0, self.font_medium)
 
         # Split long error messages
@@ -246,6 +266,9 @@ class PiPlaneOLEDController:
 
     def display_system_info(self):
         """Display system information"""
+        if not self.show_display():
+            return
+
         self.draw_text("SYSTEM INFO", 0, 0, self.font_small)
         self.draw_text(
             f"Time: {datetime.now().strftime('%H:%M:%S')}", 0, 10, self.font_small
@@ -261,6 +284,9 @@ class PiPlaneOLEDController:
         """Cleanup OLED resources"""
         if self.display:
             try:
+                if not self.show_display():
+                    return
+
                 self.draw_text("PiPlane Tracker", 0, 5, self.font_medium)
                 self.draw_text("Shutting down...", 0, 20, self.font_small)
 
