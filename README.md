@@ -1,0 +1,231 @@
+# Airplane Tracker System
+
+A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft using dump1090-fa data, provides alerts for new aircraft, and displays information on both a GUI interface and LCD screen.
+
+## Features
+
+- 🛩️ **Real-time Aircraft Monitoring**: Reads aircraft data from dump1090-fa
+- 🚨 **New Aircraft Alerts**: Visual and audio alerts when new aircraft enter range
+- 🖥️ **GUI Interface**: User-friendly Tkinter-based interface
+- 📟 **LCD Display**: Shows aircraft information on connected LCD screen (using rpi-lcd)
+- 📊 **Aircraft Tracking**: Maintains history of detected aircraft
+- 🔄 **Continuous Monitoring**: Automatic updates every 5 seconds
+- 📱 **Console Mode**: Optional headless operation
+
+## Requirements
+
+### Hardware
+- Raspberry Pi (any model with GPIO)
+- RTL-SDR dongle for aircraft reception
+- 16x2 LCD display (optional, connected via GPIO)
+- Speaker or buzzer for audio alerts (optional)
+
+### Software
+- Python 3.6+
+- dump1090-fa (for aircraft data reception)
+- Required Python packages (see requirements.txt)
+
+## Installation
+
+1. **Clone or download the project files**:
+   ```bash
+   cd /home/pi/Documents/airplane-tracker
+   ```
+
+2. **Install Python dependencies**:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. **Install and configure dump1090-fa** (if not already installed):
+   ```bash
+   sudo apt update
+   sudo apt install dump1090-fa
+   sudo systemctl enable dump1090-fa
+   sudo systemctl start dump1090-fa
+   ```
+
+4. **Connect LCD (optional)**:
+   - Connect 16x2 LCD to GPIO pins as configured in `lcd_controller.py`
+   - Default pin configuration:
+     - RS: GPIO 26
+     - Enable: GPIO 19
+     - D4: GPIO 13
+     - D5: GPIO 6
+     - D6: GPIO 5
+     - D7: GPIO 11
+
+## Usage
+
+### GUI Mode (Recommended)
+```bash
+python3 main.py
+```
+
+### Console Mode
+```bash
+python3 main.py --no-gui
+```
+
+### Additional Options
+```bash
+python3 main.py --no-lcd                    # Disable LCD display
+python3 main.py --sound=/path/to/alert.wav  # Custom alert sound
+python3 main.py --help                      # Show help
+```
+
+## File Structure
+
+```
+airplane-tracker/
+├── main.py               # Main application entry point (GUI + LCD + Alerts)
+├── aircraft_data.py      # Core aircraft data reading and country detection
+├── aircraft_display.py   # Aircraft information display and formatting
+├── display_utils.py      # Utility functions for data formatting
+├── alert_system.py       # New aircraft detection and alerts
+├── lcd_controller.py     # LCD display management
+├── gui_interface.py      # GUI interface
+├── flight_enhancer.py    # Optional flight data enhancement from APIs
+├── requirements.txt      # Python dependencies
+└── README.md            # This file
+```
+
+## Configuration
+
+### LCD Pin Configuration
+Edit `lcd_controller.py` to change LCD pin connections:
+```python
+lcd_controller = AirplaneLCDController({
+    'rs': 26, 'enable': 19, 'd4': 13, 
+    'd5': 6, 'd6': 5, 'd7': 11
+})
+```
+
+### Update Intervals
+Modify update intervals in `main.py`:
+- GUI updates: 5 seconds
+- Console updates: 10 seconds
+- Alert checking: 5 seconds
+
+### Data Source
+The system reads from `/var/run/dump1090-fa/aircraft.json` by default. 
+Change the path in `aircraft_data.py` if your installation differs.
+
+## Features Explained
+
+### GUI Interface
+- **Aircraft List**: Displays all detected aircraft in a table
+- **Status Display**: Shows total aircraft count and new aircraft alerts
+- **Alert Log**: Scrollable log of all aircraft events
+- **Control Buttons**: Start/stop monitoring, manual refresh, clear alerts
+
+### LCD Display
+- **Cycling Display**: Automatically cycles through aircraft information
+- **Aircraft Count**: Shows total number of detected aircraft
+- **Individual Aircraft**: Displays callsign, altitude, and speed
+- **Alerts**: Special alert display for new aircraft
+
+### Alert System
+- **New Aircraft Detection**: Identifies when aircraft first enter range
+- **Audio Alerts**: Optional sound notifications
+- **Visual Alerts**: GUI and LCD notifications
+- **Aircraft History**: Maintains record of all detected aircraft
+
+## Troubleshooting
+
+### Common Issues
+
+1. **No aircraft data**:
+   - Ensure dump1090-fa is running: `sudo systemctl status dump1090-fa`
+   - Check data file exists: `ls -la /var/run/dump1090-fa/aircraft.json`
+   - Verify RTL-SDR dongle is connected and working
+
+2. **LCD not working**:
+   - Check GPIO connections
+   - Verify rpi-lcd installation: `pip3 show rpi-lcd`
+   - Run LCD test: `python3 lcd_controller.py`
+
+3. **GUI not starting**:
+   - Install tkinter: `sudo apt install python3-tk`
+   - Run in console mode: `python3 main.py --no-gui`
+
+4. **Permission errors**:
+   - Run with appropriate permissions
+   - Check file permissions: `ls -la /var/run/dump1090-fa/`
+
+### Testing Individual Components
+
+Test the LCD:
+```bash
+python3 lcd_controller.py
+```
+
+Test the GUI:
+```bash
+python3 gui_interface.py
+```
+
+Test basic aircraft data reading:
+```bash
+python3 -c "from aircraft_data import read_aircraft_data; print(read_aircraft_data())"
+```
+
+## Advanced Usage
+
+### Running as a Service
+To run automatically at startup, create a systemd service:
+
+1. Create service file:
+   ```bash
+   sudo nano /etc/systemd/system/airplane-tracker.service
+   ```
+
+2. Add content:
+   ```ini
+   [Unit]
+   Description=Airplane Tracker
+   After=dump1090-fa.service
+   
+   [Service]
+   Type=simple
+   User=pi
+   WorkingDirectory=/home/pi/Documents/airplane-tracker
+   ExecStart=/usr/bin/python3 main.py --no-gui
+   Restart=always
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. Enable and start:
+   ```bash
+   sudo systemctl enable airplane-tracker
+   sudo systemctl start airplane-tracker
+   ```
+
+### Custom Alert Sounds
+Add custom alert sounds by placing WAV files in the project directory and using:
+```bash
+python3 main.py --sound=alert.wav
+```
+
+## Contributing
+
+Feel free to contribute improvements:
+- Enhanced GUI features
+- Additional aircraft data fields
+- Database logging
+- Web interface
+- Mobile notifications
+
+## License
+
+This project is open source. Use and modify as needed for your aircraft tracking requirements.
+
+## Support
+
+For issues related to:
+- **dump1090-fa**: Check FlightAware documentation
+- **LCD connections**: Verify GPIO wiring
+- **RTL-SDR**: Ensure proper drivers and antenna setup
+- **This software**: Check the troubleshooting section above
