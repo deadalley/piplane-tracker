@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.svg" alt="PiPlane Tracker" width="200"/>
   
-  # 🛩️ PiPlane Tracker
+  # PiPlane Tracker
   
   **Real-time aircraft monitoring system for Raspberry Pi**
   
