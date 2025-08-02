@@ -41,18 +41,14 @@ class AirplaneLCDController:
             print("LCD not available - running in simulation mode")
     
     def clear_display(self):
-        """Clear the LCD display"""
         if self.lcd:
             self.lcd.clear()
     
+    def turn_off_display(self):
+        if self.lcd:
+            self.lcd.backlight(False)
+    
     def display_text(self, line1, line2=""):
-        """
-        Display text on LCD
-        
-        Args:
-            line1 (str): Text for first line
-            line2 (str): Text for second line
-        """
         if self.lcd:
             try:
                 self.lcd.clear()
@@ -116,26 +112,13 @@ class AirplaneLCDController:
         self.display_text(line1, line2[:16])
     
     def display_alert(self, new_aircraft_count):
-        """
-        Display alert for new aircraft
-        
-        Args:
-            new_aircraft_count (int): Number of new aircraft
-        """
         self.display_text("** ALERT **", f"New: {new_aircraft_count}")
         time.sleep(3)  # Show alert for 3 seconds
     
     def display_no_aircraft(self):
-        """Display message when no aircraft are detected"""
         self.display_text("No Aircraft", f"Time: {datetime.now().strftime('%H:%M:%S')}")
     
     def display_error(self, error_msg):
-        """
-        Display error message
-        
-        Args:
-            error_msg (str): Error message to display
-        """
         self.display_text("ERROR", error_msg[:16])
     
     def start_cycling_display(self, aircraft_data_func, interval=5):
@@ -188,25 +171,8 @@ class AirplaneLCDController:
         """Stop the cycling display"""
         self.display_active = False
         self.clear_display()
-    
-    def log_aircraft_event(self, event_type, aircraft_data):
-        """
-        Log aircraft events to console (and potentially to file later)
+        self.turn_off_display()
         
-        Args:
-            event_type (str): Type of event (e.g., 'NEW', 'DEPARTED')
-            aircraft_data (dict): Aircraft information
-        """
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        flight = aircraft_data.get('flight', '').strip()
-        hex_code = aircraft_data.get('hex', 'Unknown')
-        
-        log_entry = f"[{timestamp}] {event_type}: {flight if flight else 'Unknown'} (ICAO: {hex_code})"
-        print(log_entry)
-        
-        # You could also write to a log file here
-        # with open('aircraft_log.txt', 'a') as f:
-        #     f.write(log_entry + '\n')
     
     def cleanup(self):
         """Cleanup LCD resources"""
@@ -221,36 +187,3 @@ class AirplaneLCDController:
             except Exception as e:
                 print(f"Error during LCD cleanup: {e}")
 
-# Test function for LCD
-def test_lcd():
-    """Test the LCD functionality"""
-    lcd_controller = AirplaneLCDController()
-    
-    # Test basic display
-    lcd_controller.display_startup_message()
-    
-    # Test aircraft count display
-    lcd_controller.display_aircraft_count(5, 2)
-    time.sleep(3)
-    
-    # Test individual aircraft display
-    test_aircraft = {
-        'flight': 'UAL123',
-        'hex': 'A12345',
-        'alt_baro': 35000,
-        'gs': 450
-    }
-    lcd_controller.display_aircraft_info(test_aircraft)
-    time.sleep(3)
-    
-    # Test alert
-    lcd_controller.display_alert(2)
-    
-    # Test no aircraft
-    lcd_controller.display_no_aircraft()
-    time.sleep(3)
-    
-    lcd_controller.cleanup()
-
-if __name__ == "__main__":
-    test_lcd()
