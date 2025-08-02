@@ -78,7 +78,6 @@ class PiPlaneOLEDController:
                     self.font_medium = ImageFont.load_default()
 
                 self.display_startup_message()
-                print("OLED initialized successfully")
 
             except Exception as e:
                 self.display = None

@@ -423,7 +423,7 @@ class PiPlaneMonitor:
         except KeyboardInterrupt:
             self.exit_requested = True
 
-        print("\n⏹️  Monitoring stopped (ESC pressed or interrupted)")
+        print("\n⏹️  Monitoring stopped")
         return self.exit_requested
 
     def request_exit(self):

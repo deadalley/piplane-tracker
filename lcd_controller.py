@@ -31,7 +31,6 @@ class PiPlaneLCDController:
                 self.lcd = LCD()
                 self.lcd.clear()
                 self.display_startup_message()
-                print("LCD initialized successfully")
                 time.sleep(2)
             except Exception as e:
                 self.lcd = None

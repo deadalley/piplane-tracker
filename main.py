@@ -6,8 +6,6 @@ Main PiPlane Tracker Application
 import sys
 import signal
 import os
-import time
-import threading
 
 try:
     import termios
@@ -26,57 +24,15 @@ from oled_controller import PiPlaneOLEDController
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C gracefully"""
-    print("\nShutting down airplane tracker...")
+    print("\nShutting down PiPlane Tracker...")
     sys.exit(0)
-
-
-def get_single_char():
-    """Get a single character from stdin"""
-    if TERMIOS_AVAILABLE:
-        import termios
-        import tty
-
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            char = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return char
-    else:
-        # Fallback for systems without termios
-        return input().strip()
-
-
-def keyboard_monitor(monitor):
-    """Monitor for ESC key press during monitoring"""
-    print("(Keyboard monitoring active - press ESC to return to menu)")
-    while monitor.running and not monitor.exit_requested:
-        try:
-            if TERMIOS_AVAILABLE:
-                char = get_single_char()
-                if ord(char) == 27:  # ESC key
-                    print("\n🔙 ESC pressed - returning to menu...")
-                    monitor.request_exit()
-                    break
-            else:
-                # Fallback: check every second
-                time.sleep(1)
-        except KeyboardInterrupt:
-            monitor.request_exit()
-            break
-        except:
-            break
 
 
 def show_menu():
     """Display the main menu"""
     print("\n" + "=" * 60)
-    print("🛩️  PiPlane Tracker v1.0 - Main Menu")
+    print("🛩️  PiPlane Tracker v1.0")
     print("=" * 60)
-    print("Choose an option:")
-    print()
     print("  [L] List - Show all known aircraft history")
     print("  [M] Monitor - Start real-time aircraft monitoring")
     print("  [Q] Quit - Exit the application")
@@ -94,7 +50,7 @@ def get_user_choice():
         print("Invalid choice. Please enter L, M, or Q.")
 
 
-def initialize_controllers():
+def initialize_displays():
     """Initialize LCD and OLED controllers"""
     config = get_config()
     lcd_controller = None
@@ -133,11 +89,10 @@ def test_data_connection():
         else:
             print(f"⚠️  Data file not found at {data_file_path}")
             print("   Make sure dump1090-fa is running and the data file exists")
-            return False
+            raise FileNotFoundError(f"Data file not found: {data_file_path}")
     except Exception as e:
         print(f"❌ Data connection test failed: {e}")
-        print("   The application will continue but may not function properly")
-        return False
+        raise e
 
 
 def main():
@@ -147,13 +102,6 @@ def main():
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
-
-    # Load configuration
-    config = get_config()
-    print(f"📁 Data source: {config.get_data_source_path()}")
-
-    # Register signal handler for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)
 
     # Check for help argument
     if "--help" in sys.argv or "-h" in sys.argv:
@@ -168,12 +116,19 @@ def main():
         print("  - Press ESC during monitoring to return to menu")
         return
 
-    # Initialize controllers
-    print("\n🔧 Initializing controllers...")
-    lcd_controller, oled_controller = initialize_controllers()
+    # Register signal handler for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Load configuration
+    config = get_config()
+    print(f"📁 Data source: {config.get_data_source_path()}")
 
     # Test data connection
-    data_available = test_data_connection()
+    test_data_connection()
+
+    # Initialize displays
+    print("\n🔧 Initializing displays...")
+    lcd_controller, oled_controller = initialize_displays()
 
     # Initialize monitor system
     try:
@@ -193,36 +148,13 @@ def main():
             choice = get_user_choice()
 
             if choice == "L":
-                # List known aircraft
                 monitor.list_known_aircraft()
                 input("\nPress Enter to continue...")
 
             elif choice == "M":
-                # Start monitoring
-                if not data_available:
-                    print(
-                        "\n⚠️  Warning: Data file not available. Monitoring may not work properly."
-                    )
-                    cont = input("Continue anyway? (y/N): ").strip().lower()
-                    if cont != "y":
-                        continue
-
                 print("\n🔍 Starting aircraft monitoring...")
-                if TERMIOS_AVAILABLE:
-                    print("💡 Press ESC to return to menu, or Ctrl+C to quit")
-                else:
-                    print("💡 Press Ctrl+C to return to menu or quit")
                 print("-" * 60)
 
-                # Start keyboard monitoring thread if available
-                keyboard_thread = None
-                if TERMIOS_AVAILABLE:
-                    keyboard_thread = threading.Thread(
-                        target=keyboard_monitor, args=(monitor,), daemon=True
-                    )
-                    keyboard_thread.start()
-
-                # Start monitoring and wait for ESC or interrupt
                 exit_requested = monitor.start_monitoring(interval=5)
 
                 if not exit_requested:
@@ -230,12 +162,11 @@ def main():
                     break
 
             elif choice == "Q":
-                # Quit
-                print("\n👋 Goodbye!")
+                print("Shutting down PiPlane Tracker...")
                 break
 
     except KeyboardInterrupt:
-        print("\n\n🛑 Application interrupted by user")
+        print("\n\n🛑 PiPlane Tracker interrupted by user")
     finally:
         # Cleanup
         print("\n🧹 Cleaning up...")
@@ -247,7 +178,7 @@ def main():
             oled_controller.cleanup()
         print("✅ Cleanup complete")
 
-    print("\nPiPlane Tracker stopped.")
+    print("\nPiPlane Tracker stopped")
 
 
 if __name__ == "__main__":
