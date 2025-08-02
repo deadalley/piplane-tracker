@@ -122,7 +122,13 @@ class AirplaneTrackerConfig:
             # Enhancement
             'enhancement_enabled': False,
             'enhancement_cache_timeout': 300,
-            'enhancement_api_rate_limit': 1
+            'enhancement_api_rate_limit': 1,
+            
+            # OpenSky Network API
+            'opensky_enabled': False,
+            'opensky_rate_limit': 1.0,
+            'opensky_cache_timeout': 300,
+            'opensky_timeout': 10
         }
     
     def get(self, key: str, default: Any = None) -> Any:

@@ -35,3 +35,9 @@ logging_level=INFO
 enhancement_enabled=false
 enhancement_cache_timeout=300
 enhancement_api_rate_limit=1
+
+# OpenSky Network API Settings
+opensky_enabled=false
+opensky_rate_limit=1.0
+opensky_cache_timeout=300
+opensky_timeout=10
