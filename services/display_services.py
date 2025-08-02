@@ -134,7 +134,7 @@ class LCDDisplayService(BaseDisplayService):
         """Display aircraft information on LCD"""
         if self.lcd_controller:
             self.lcd_controller.display_new_aircraft_detected(interval=2)
-            self.lcd_controller.display_aircraft_info(aircraft=aircraft, interval=2)
+            self.lcd_controller.display_aircraft_info(aircraft=aircraft, interval=5)
             self._last_state = "aircraft"
 
     def _show_idle_message(self):

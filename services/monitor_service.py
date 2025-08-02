@@ -286,38 +286,27 @@ class PiPlaneMonitorService:
             )
 
             while self.running and not self.exit_requested:
-                try:
-                    aircraft_data = self._read_aircraft_data()
+                aircraft_data = self._read_aircraft_data()
 
-                    if aircraft_data:
-                        # Get new and existing aircrafts from current data set
-                        new_aircrafts, existing_aircrafts = (
-                            self._get_new_and_existing_aircrafts(aircraft_data)
+                if aircraft_data:
+                    # Get new and existing aircrafts from current data set
+                    new_aircrafts, existing_aircrafts = (
+                        self._get_new_and_existing_aircrafts(aircraft_data)
+                    )
+
+                    # Add new aicrafts, update position, and remove old aircrafts from history
+                    self._update_aircraft_history(new_aircrafts, existing_aircrafts)
+
+                    # Push new aircrafts to all display queues
+                    self._update_new_aircrafts_queue(new_aircrafts)
+
+                    # Log new aircraft detections
+                    if len(new_aircrafts) > 0:
+                        timestamp = datetime.now().strftime("%H:%M:%S")
+                        print(
+                            f"[{timestamp}] New aircrafts detected [{len(new_aircrafts)}]:"
                         )
 
-                        # Add new aicrafts, update position, and remove old aircrafts from history
-                        self._update_aircraft_history(new_aircrafts, existing_aircrafts)
-
-                        # Push new aircrafts to all display queues
-                        self._update_new_aircrafts_queue(new_aircrafts)
-
-                        # Log new aircraft detections
-                        if len(new_aircrafts) > 0:
-                            timestamp = datetime.now().strftime("%H:%M:%S")
-                            print(
-                                f"[{timestamp}] New aircrafts detected [{len(new_aircrafts)}]:"
-                            )
-
-                    else:
-                        if self.lcd_controller:
-                            self.lcd_controller.display_error("No data")
-
-                        if self.oled_controller:
-                            self.oled_controller.display_error("No data")
-
-                    time.sleep(interval)
-                except Exception as e:
-                    print(f"Error in monitoring loop: {e}")
                     time.sleep(interval)
 
         monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
