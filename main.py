@@ -61,7 +61,6 @@ def main():
     if lcd_enabled:
         try:
             lcd_controller = PiPlaneLCDController()
-            lcd_controller.display_startup_message()
             print("✅ LCD controller initialized")
         except Exception as e:
             print(f"⚠️  LCD controller initialization failed: {e}")
