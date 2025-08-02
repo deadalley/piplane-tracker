@@ -13,7 +13,7 @@ import os
 import threading
 
 
-class PiPlaneMonitor:
+class PiPlaneMonitorService:
     def __init__(self, file_path: str, lcd_controller=None, oled_controller=None):
         """
         Initialize the alert system

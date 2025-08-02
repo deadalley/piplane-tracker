@@ -17,9 +17,9 @@ except ImportError:
 from datetime import datetime
 from config import get_config
 
-from monitor import PiPlaneMonitor
-from lcd_controller import PiPlaneLCDController
-from oled_controller import PiPlaneOLEDController
+from services.monitor_service import PiPlaneMonitorService
+from controllers.lcd_controller import PiPlaneLCDController
+from controllers.oled_controller import PiPlaneOLEDController
 
 
 def signal_handler(sig, frame):
@@ -132,7 +132,7 @@ def main():
 
     # Initialize monitor system
     try:
-        monitor = PiPlaneMonitor(
+        monitor = PiPlaneMonitorService(
             file_path=config.get_data_source_path(),
             lcd_controller=lcd_controller,
             oled_controller=oled_controller,
