@@ -41,7 +41,6 @@ def read_aircraft_data(file_path: Optional[str] = None) -> Optional[Dict]:
         return None
     except PermissionError:
         print(f"Error: Permission denied reading {file_path}")
-        print("You may need to run this script with appropriate permissions.")
         return None
     except Exception as e:
         print(f"Error reading aircraft data: {e}")
