@@ -75,57 +75,12 @@ def display_single_aircraft(aircraft: Dict, index: int):
     print(f"ICAO ID (Hex): {hex_code}")
     print(f"Country: {country}")
     
-    # Enhanced flight information (if available)
-    display_enhanced_info(aircraft)
-    
     # Position and movement data
     display_position_data(aircraft)
     
     # Technical data
     display_technical_data(aircraft)
 
-def display_enhanced_info(aircraft: Dict):
-    """Display enhanced flight information if available"""
-    # Origin and destination
-    origin = aircraft.get('origin') or aircraft.get('departure')
-    destination = aircraft.get('destination') or aircraft.get('arrival')
-    aircraft_type = aircraft.get('type') or aircraft.get('aircraft_type')
-    registration = aircraft.get('registration') or aircraft.get('reg')
-    
-    if origin:
-        print(f"Origin: {origin}")
-    
-    if destination:
-        print(f"Destination: {destination}")
-    
-    if aircraft_type:
-        print(f"Aircraft Type: {aircraft_type}")
-    
-    if registration:
-        print(f"Registration: {registration}")
-    
-    # Timing information
-    departure_time = aircraft.get('departure_time') or aircraft.get('dep_time')
-    arrival_time = aircraft.get('arrival_time') or aircraft.get('arr_time')
-    estimated_arrival = aircraft.get('estimated_arrival') or aircraft.get('eta')
-    
-    if departure_time:
-        print(f"Departure Time: {departure_time}")
-    
-    if arrival_time:
-        print(f"Arrival Time: {arrival_time}")
-    
-    if estimated_arrival:
-        print(f"Estimated Arrival: {estimated_arrival}")
-    
-    # Airline and route information
-    airline = aircraft.get('airline') or aircraft.get('operator')
-    if airline:
-        print(f"Airline/Operator: {airline}")
-    
-    route = aircraft.get('route')
-    if route:
-        print(f"Route: {route}")
 
 def display_position_data(aircraft: Dict):
     """Display position and movement data"""
