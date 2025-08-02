@@ -8,7 +8,8 @@ A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft
 - 🚨 **New Aircraft Alerts**: Visual and audio alerts when new aircraft enter range
 - 🖥️ **GUI Interface**: User-friendly Tkinter-based interface
 - 📟 **LCD Display**: Shows aircraft information on connected LCD screen (using rpi-lcd)
-- 📊 **Aircraft Tracking**: Maintains history of detected aircraft
+- � **OLED Display**: Compact display on 0.91" I2C OLED screen (SSD1306)
+- �📊 **Aircraft Tracking**: Maintains history of detected aircraft
 - 🔄 **Continuous Monitoring**: Automatic updates every 5 seconds
 - 📱 **Console Mode**: Optional headless operation
 
@@ -18,12 +19,13 @@ A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft
 - Raspberry Pi (any model with GPIO)
 - RTL-SDR dongle for aircraft reception
 - 16x2 LCD display (optional, connected via GPIO)
+- 0.91" I2C OLED display (optional, typically SSD1306 128x32)
 - Speaker or buzzer for audio alerts (optional)
 
 ### Software
 - Python 3.6+
 - dump1090-fa (for aircraft data reception)
-- Required Python packages (see requirements.txt)
+- Required Python packages (see requirements)
 
 ## Installation
 
@@ -34,7 +36,7 @@ A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft
 
 2. **Install Python dependencies**:
    ```bash
-   pip3 install -r requirements.txt
+   pip3 install -r requirements
    ```
 
 3. **Install and configure dump1090-fa** (if not already installed):
@@ -55,6 +57,15 @@ A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft
      - D6: GPIO 5
      - D7: GPIO 11
 
+5. **Connect OLED (optional)**:
+   - Connect 0.91" I2C OLED display to I2C pins
+   - Default connections:
+     - VCC: 3.3V
+     - GND: Ground
+     - SDA: GPIO 2 (Pin 3)
+     - SCL: GPIO 3 (Pin 5)
+   - Default I2C address: 0x3C
+
 ## Usage
 
 ### GUI Mode (Recommended)
@@ -70,6 +81,8 @@ python3 main.py --no-gui
 ### Additional Options
 ```bash
 python3 main.py --no-lcd                    # Disable LCD display
+python3 main.py --no-oled                   # Disable OLED display
+python3 main.py --oled-only                 # Use OLED only (disable LCD)
 python3 main.py --sound=/path/to/alert.wav  # Custom alert sound
 python3 main.py --help                      # Show help
 ```
@@ -84,9 +97,10 @@ airplane-tracker/
 ├── display_utils.py      # Utility functions for data formatting
 ├── alert_system.py       # New aircraft detection and alerts
 ├── lcd_controller.py     # LCD display management
+├── oled_controller.py    # OLED display management
 ├── gui_interface.py      # GUI interface
 ├── flight_enhancer.py    # Optional flight data enhancement from APIs
-├── requirements.txt      # Python dependencies
+├── requirements      # Python dependencies
 └── README.md            # This file
 ```
 
@@ -99,6 +113,14 @@ lcd_controller = AirplaneLCDController({
     'rs': 26, 'enable': 19, 'd4': 13, 
     'd5': 6, 'd6': 5, 'd7': 11
 })
+```
+
+### OLED Configuration
+Edit `oled_controller.py` to change OLED settings:
+```python
+oled_controller = AirplaneOLEDController(
+    width=128, height=32, i2c_address=0x3C
+)
 ```
 
 ### Update Intervals
@@ -125,6 +147,13 @@ Change the path in `aircraft_data.py` if your installation differs.
 - **Individual Aircraft**: Displays callsign, altitude, and speed
 - **Alerts**: Special alert display for new aircraft
 
+### OLED Display
+- **Compact View**: Optimized for 128x32 pixel display
+- **Fast Updates**: 3-second cycle time for quick information
+- **Aircraft Details**: Shows flight, altitude, speed, heading, and GPS status
+- **Visual Alerts**: Special alert screens for new aircraft
+- **System Info**: Time and status information
+
 ### Alert System
 - **New Aircraft Detection**: Identifies when aircraft first enter range
 - **Audio Alerts**: Optional sound notifications
@@ -145,11 +174,18 @@ Change the path in `aircraft_data.py` if your installation differs.
    - Verify rpi-lcd installation: `pip3 show rpi-lcd`
    - Run LCD test: `python3 lcd_controller.py`
 
-3. **GUI not starting**:
+3. **OLED not working**:
+   - Check I2C connections (SDA/SCL)
+   - Enable I2C: `sudo raspi-config` → Interface Options → I2C → Enable
+   - Check I2C address: `sudo i2cdetect -y 1` (should show 0x3C)
+   - Verify OLED libraries: `pip3 show adafruit-circuitpython-ssd1306`
+   - Run OLED test: `python3 oled_controller.py`
+
+4. **GUI not starting**:
    - Install tkinter: `sudo apt install python3-tk`
    - Run in console mode: `python3 main.py --no-gui`
 
-4. **Permission errors**:
+5. **Permission errors**:
    - Run with appropriate permissions
    - Check file permissions: `ls -la /var/run/dump1090-fa/`
 
@@ -158,6 +194,11 @@ Change the path in `aircraft_data.py` if your installation differs.
 Test the LCD:
 ```bash
 python3 lcd_controller.py
+```
+
+Test the OLED:
+```bash
+python3 oled_controller.py
 ```
 
 Test the GUI:

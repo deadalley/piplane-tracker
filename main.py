@@ -13,6 +13,7 @@ from datetime import datetime
 from aircraft_data import read_aircraft_data
 from alert_system import AirplaneAlertSystem
 from lcd_controller import AirplaneLCDController
+from oled_controller import AirplaneOLEDController
 from gui_interface import AirplaneTrackerGUI
 
 def signal_handler(sig, frame):
@@ -34,6 +35,7 @@ def main():
     # Parse command line arguments
     gui_mode = True
     lcd_enabled = True
+    oled_enabled = True
     alert_sound_path = None
     
     # Check for command line arguments
@@ -42,6 +44,11 @@ def main():
             gui_mode = False
         elif arg == "--no-lcd":
             lcd_enabled = False
+        elif arg == "--no-oled":
+            oled_enabled = False
+        elif arg == "--oled-only":
+            lcd_enabled = False
+            oled_enabled = True
         elif arg.startswith("--sound="):
             alert_sound_path = arg.split("=", 1)[1]
         elif arg in ["--help", "-h"]:
@@ -49,11 +56,13 @@ def main():
             print("\nOptions:")
             print("  --no-gui          Run without GUI (console only)")
             print("  --no-lcd          Disable LCD display")
+            print("  --no-oled         Disable OLED display")
+            print("  --oled-only       Use OLED only (disable LCD)")
             print("  --sound=PATH      Path to alert sound file")
             print("  --help, -h        Show this help message")
             print("\nDefault behavior:")
             print("  - Runs with GUI interface")
-            print("  - Enables LCD display (if hardware available)")
+            print("  - Enables both LCD and OLED displays (if hardware available)")
             print("  - Monitors for new aircraft with alerts")
             print("  - Updates every 5 seconds")
             return
@@ -80,6 +89,16 @@ def main():
             print(f"⚠️  LCD controller initialization failed: {e}")
             lcd_controller = None
     
+    # Initialize OLED controller (if enabled)
+    oled_controller = None
+    if oled_enabled:
+        try:
+            oled_controller = AirplaneOLEDController()
+            print("✅ OLED controller initialized")
+        except Exception as e:
+            print(f"⚠️  OLED controller initialization failed: {e}")
+            oled_controller = None
+    
     # Test initial data connection
     print("\nTesting data connection...")
     try:
@@ -103,7 +122,8 @@ def main():
             gui = AirplaneTrackerGUI(
                 data_source_func=read_aircraft_data,
                 alert_system=alert_system,
-                lcd_controller=lcd_controller
+                lcd_controller=lcd_controller,
+                oled_controller=oled_controller
             )
             gui.run()
         except Exception as e:
@@ -126,6 +146,11 @@ def main():
             if lcd_controller:
                 lcd_controller.start_cycling_display(read_aircraft_data, 5)
                 print("LCD display started")
+            
+            # Start OLED cycling
+            if oled_controller:
+                oled_controller.start_cycling_display(read_aircraft_data, 3)
+                print("OLED display started")
             
             # Main console loop
             import time
@@ -157,6 +182,8 @@ def main():
                 alert_system.stop_monitoring()
             if lcd_controller:
                 lcd_controller.cleanup()
+            if oled_controller:
+                oled_controller.cleanup()
     
     print("Airplane tracker stopped.")
 

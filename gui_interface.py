@@ -13,7 +13,7 @@ from typing import Dict, List
 import json
 
 class AirplaneTrackerGUI:
-    def __init__(self, data_source_func, alert_system=None, lcd_controller=None):
+    def __init__(self, data_source_func, alert_system=None, lcd_controller=None, oled_controller=None):
         """
         Initialize the GUI
         
@@ -21,10 +21,12 @@ class AirplaneTrackerGUI:
             data_source_func: Function that returns aircraft data
             alert_system: AirplaneAlertSystem instance (optional)
             lcd_controller: AirplaneLCDController instance (optional)
+            oled_controller: AirplaneOLEDController instance (optional)
         """
         self.data_source_func = data_source_func
         self.alert_system = alert_system
         self.lcd_controller = lcd_controller
+        self.oled_controller = oled_controller
         self.running = False
         self.update_interval = 5  # seconds
         
@@ -281,6 +283,10 @@ class AirplaneTrackerGUI:
             if self.lcd_controller:
                 self.lcd_controller.start_cycling_display(self.data_source_func, self.update_interval)
             
+            # Start OLED cycling if available
+            if self.oled_controller:
+                self.oled_controller.start_cycling_display(self.data_source_func, 3)  # Faster cycle for OLED
+            
             self.log_message("Monitoring started")
     
     def stop_monitoring(self):
@@ -297,6 +303,10 @@ class AirplaneTrackerGUI:
             # Stop LCD cycling
             if self.lcd_controller:
                 self.lcd_controller.stop_cycling_display()
+            
+            # Stop OLED cycling
+            if self.oled_controller:
+                self.oled_controller.stop_cycling_display()
             
             self.log_message("Monitoring stopped")
     
@@ -332,6 +342,8 @@ class AirplaneTrackerGUI:
         self.stop_monitoring()
         if self.lcd_controller:
             self.lcd_controller.cleanup()
+        if self.oled_controller:
+            self.oled_controller.cleanup()
         self.root.destroy()
 
 if __name__ == "__main__":

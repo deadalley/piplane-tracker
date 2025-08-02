@@ -1,2 +1,6 @@
 rpi-lcd>=0.0.3
 pygame
+requests
+adafruit-circuitpython-ssd1306
+pillow
+adafruit-blinka
