@@ -10,7 +10,11 @@ from typing import Dict, List, Optional
 import threading
 import json
 import os
-import threading
+from .display_services import (
+    ConsoleDisplayService,
+    LCDDisplayService,
+    OLEDDisplayService,
+)
 
 
 class PiPlaneMonitorService:
@@ -27,19 +31,27 @@ class PiPlaneMonitorService:
         self.aircraft_history: Dict[str, dict] = {}
         self.running = False
 
-        # Display controllers
+        # Initialize display services
+        self.console_service = ConsoleDisplayService()
+
+        self.lcd_service = None
+        if lcd_controller:
+            self.lcd_service = LCDDisplayService(lcd_controller)
+
+        self.oled_service = None
+        if oled_controller:
+            self.oled_service = OLEDDisplayService(oled_controller)
+
+        # Set aircraft history reference for all services
+        self.console_service.aircraft_history = self.aircraft_history
+        if self.lcd_service:
+            self.lcd_service.aircraft_history = self.aircraft_history
+        if self.oled_service:
+            self.oled_service.aircraft_history = self.aircraft_history
+
+        # Display controllers (kept for compatibility)
         self.lcd_controller = lcd_controller
         self.oled_controller = oled_controller
-
-        # New aircraft display state - separate queues for each controller
-        self.console_queue: List[dict] = []
-        self.lcd_queue: List[dict] = []
-        self.oled_queue: List[dict] = []
-
-        # Thread locks for queue safety
-        self.console_queue_lock = threading.Lock()
-        self.lcd_queue_lock = threading.Lock()
-        self.oled_queue_lock = threading.Lock()
 
         # Keyboard input handling
         self.exit_requested = False
@@ -47,27 +59,18 @@ class PiPlaneMonitorService:
         # Set up data source path
         self.file_path = file_path
 
-    def _start_display_threads(self):
-        """Start persistent background threads for each display controller"""
-        # Console printing thread - always runs
-        console_thread = threading.Thread(
-            target=self._console_display_loop, daemon=True, name="ConsoleDisplay"
-        )
-        console_thread.start()
+        # Start display services
+        self._start_display_services()
 
-        # LCD display thread - only if controller exists
-        if self.lcd_controller:
-            lcd_thread = threading.Thread(
-                target=self._lcd_display_loop, daemon=True, name="LCDDisplay"
-            )
-            lcd_thread.start()
+    def _start_display_services(self):
+        """Start all display services"""
+        self.console_service.start()
 
-        # OLED display thread - only if controller exists
-        if self.oled_controller:
-            oled_thread = threading.Thread(
-                target=self._oled_display_loop, daemon=True, name="OLEDDisplay"
-            )
-            oled_thread.start()
+        if self.lcd_service:
+            self.lcd_service.start()
+
+        if self.oled_service:
+            self.oled_service.start()
 
     def _is_valid_aircraft(self, aircraft: dict) -> bool:
         """Check if the aircraft data is valid"""
@@ -215,167 +218,49 @@ class PiPlaneMonitorService:
         self._cleanup_old_aircrafts(existing_aircrafts)
 
     def _update_new_aircrafts_queue(self, new_aircrafts: List[dict]):
-        """Distribute new aircrafts to all controller queues"""
+        """Distribute new aircrafts to all display services"""
         if not new_aircrafts:
             return
 
-        # Define queue configurations: (queue, lock, condition)
-        queue_configs = [
-            (
-                self.console_queue,
-                self.console_queue_lock,
-                True,
-            ),  # Console always enabled
-            (self.lcd_queue, self.lcd_queue_lock, self.lcd_controller is not None),
-            (self.oled_queue, self.oled_queue_lock, self.oled_controller is not None),
-        ]
-
-        # Get existing hex codes from all queues to avoid duplicates
-        existing_hex_codes = []
-        for queue, lock, _ in queue_configs:
-            with lock:
-                hex_codes = {
-                    aircraft.get("hex") for aircraft in queue if aircraft.get("hex")
-                }
-                existing_hex_codes.append(hex_codes)
-
-        # Add new aircraft to appropriate queues
         for aircraft in new_aircrafts:
             hex_code = aircraft.get("hex")
             if not hex_code:
                 continue
 
-            for i, (queue, lock, enabled) in enumerate(queue_configs):
-                if enabled and hex_code not in existing_hex_codes[i]:
-                    with lock:
-                        queue.append(aircraft)
+            # Add to all active display services
+            self.console_service.add_aircraft(aircraft)
+
+            if self.lcd_service:
+                self.lcd_service.add_aircraft(aircraft)
+
+            if self.oled_service:
+                self.oled_service.add_aircraft(aircraft)
 
     def _has_queued_aircraft(self) -> bool:
-        """Check if any of the queues have aircrafts to process"""
-        with self.console_queue_lock:
-            if self.console_queue:
-                return True
+        """Check if any of the display services have aircraft to process"""
+        if self.console_service.get_queue_length() > 0:
+            return True
 
-        with self.lcd_queue_lock:
-            if self.lcd_queue:
-                return True
+        if self.lcd_service and self.lcd_service.get_queue_length() > 0:
+            return True
 
-        with self.oled_queue_lock:
-            if self.oled_queue:
-                return True
+        if self.oled_service and self.oled_service.get_queue_length() > 0:
+            return True
 
         return False
 
-    def _console_display_loop(self):
-        """Persistent loop for console display processing"""
-        while not self.exit_requested:
-            try:
-                with self.console_queue_lock:
-                    if not self.console_queue:
-                        # No aircraft to process, sleep briefly
-                        pass
-                    else:
-                        # Process one aircraft
-                        aircraft = self.console_queue.pop(0)
-                        # Check if aircraft is still in history
-                        hex_code = aircraft.get("hex")
-                        if hex_code and hex_code in self.aircraft_history:
-                            self._print_to_console(aircraft)
-                        # If aircraft no longer in history, it was already removed from queue
-
-                time.sleep(0.1)  # Brief sleep to prevent excessive CPU usage
-            except Exception as e:
-                print(f"Error in console display loop: {e}")
-                time.sleep(1)
-
-    def _lcd_display_loop(self):
-        """Persistent loop for LCD display processing"""
-        if not self.lcd_controller:
-            return
-
-        while not self.exit_requested:
-            try:
-                with self.lcd_queue_lock:
-                    if not self.lcd_queue:
-                        # No aircraft to process, sleep briefly
-                        pass
-                    else:
-                        # Process one aircraft
-                        aircraft = self.lcd_queue.pop(0)
-                        # Check if aircraft is still in history
-                        hex_code = aircraft.get("hex")
-                        if hex_code and hex_code in self.aircraft_history:
-                            self.lcd_controller.display_new_aircraft_detected(
-                                interval=2
-                            )
-                            self.lcd_controller.display_aircraft_info(
-                                aircraft=aircraft, interval=2
-                            )
-                        # If aircraft no longer in history, it was already removed from queue
-
-                time.sleep(0.1)  # Brief sleep to prevent excessive CPU usage
-            except Exception as e:
-                print(f"Error in LCD display loop: {e}")
-                time.sleep(1)
-
-    def _oled_display_loop(self):
-        """Persistent loop for OLED display processing"""
-        if not self.oled_controller:
-            return
-
-        while not self.exit_requested:
-            try:
-                with self.oled_queue_lock:
-                    if not self.oled_queue:
-                        # No aircraft to process, sleep briefly
-                        pass
-                    else:
-                        # Process one aircraft
-                        aircraft = self.oled_queue.pop(0)
-                        # Check if aircraft is still in history
-                        hex_code = aircraft.get("hex")
-                        if hex_code and hex_code in self.aircraft_history:
-                            self.oled_controller.display_new_aircraft_detected(
-                                interval=2
-                            )
-                            self.oled_controller.display_aircraft_info(
-                                aircraft=aircraft, interval=5
-                            )
-                        # If aircraft no longer in history, it was already removed from queue
-
-                time.sleep(0.1)  # Brief sleep to prevent excessive CPU usage
-            except Exception as e:
-                print(f"Error in OLED display loop: {e}")
-                time.sleep(1)
-
     def _cleanup_queues_for_removed_aircraft(self, removed_hex_codes: set):
-        """Remove aircraft from all queues when they're removed from history"""
+        """Remove aircraft from all display service queues when they're removed from history"""
         if not removed_hex_codes:
             return
 
-        # Clean console queue
-        with self.console_queue_lock:
-            self.console_queue = [
-                aircraft
-                for aircraft in self.console_queue
-                if aircraft.get("hex") not in removed_hex_codes
-            ]
+        self.console_service.remove_aircraft(removed_hex_codes)
 
-        # Clean LCD queue
-        with self.lcd_queue_lock:
-            self.lcd_queue = [
-                aircraft
-                for aircraft in self.lcd_queue
-                if aircraft.get("hex") not in removed_hex_codes
-            ]
+        if self.lcd_service:
+            self.lcd_service.remove_aircraft(removed_hex_codes)
 
-        # Clean OLED queue
-        with self.oled_queue_lock:
-            self.oled_queue = [
-                aircraft
-                for aircraft in self.oled_queue
-                if aircraft.get("hex") not in removed_hex_codes
-            ]
+        if self.oled_service:
+            self.oled_service.remove_aircraft(removed_hex_codes)
 
     def _print_to_console(self, aircraft: dict):
         """Update console output"""
@@ -404,9 +289,6 @@ class PiPlaneMonitorService:
             print(
                 f"✅ [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Monitoring started"
             )
-
-            # Persistent display threads
-            self._start_display_threads()
 
             while self.running and not self.exit_requested:
                 try:
@@ -458,11 +340,23 @@ class PiPlaneMonitorService:
     def request_exit(self):
         """Request monitoring to stop (called externally)"""
         self.exit_requested = True
+        self._stop_display_services()
 
     def stop_monitoring(self):
         """Stop monitoring"""
         self.running = False
         self.exit_requested = True
+        self._stop_display_services()
+
+    def _stop_display_services(self):
+        """Stop all display services"""
+        self.console_service.stop()
+
+        if self.lcd_service:
+            self.lcd_service.stop()
+
+        if self.oled_service:
+            self.oled_service.stop()
 
     def list_known_aircraft(self):
         """List all known aircraft in a formatted way"""
