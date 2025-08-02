@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Main Airplane Tracker Application
-Integrates GUI, alerts, and LCD display functionality
+Console-based airplane tracker with LCD/OLED display and alert system
 """
 
 import sys
@@ -15,7 +15,6 @@ from aircraft_data import read_aircraft_data
 from alert_system import AirplaneAlertSystem
 from lcd_controller import AirplaneLCDController
 from oled_controller import AirplaneOLEDController
-from gui_interface import AirplaneTrackerGUI
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C gracefully"""
@@ -39,16 +38,13 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     
     # Parse command line arguments (override config)
-    gui_mode = config.is_gui_enabled()
     lcd_enabled = config.is_lcd_enabled()
     oled_enabled = config.is_oled_enabled()
     alert_sound_path = config.get_sound_file()
     
     # Check for command line arguments
     for arg in sys.argv[1:]:
-        if arg == "--no-gui":
-            gui_mode = False
-        elif arg == "--no-lcd":
+        if arg == "--no-lcd":
             lcd_enabled = False
         elif arg == "--no-oled":
             oled_enabled = False
@@ -60,7 +56,6 @@ def main():
         elif arg in ["--help", "-h"]:
             print("Usage: python3 main.py [options]")
             print("\nOptions:")
-            print("  --no-gui          Run without GUI (console only)")
             print("  --no-lcd          Disable LCD display")
             print("  --no-oled         Disable OLED display")
             print("  --oled-only       Use OLED only (disable LCD)")
@@ -70,7 +65,7 @@ def main():
             print("  - Edit the 'config' file to change default settings")
             print("  - Data source, display options, and more can be configured")
             print("\nDefault behavior:")
-            print("  - Runs with GUI interface")
+            print("  - Runs in console mode")
             print("  - Enables both LCD and OLED displays (if hardware available)")
             print("  - Monitors for new aircraft with alerts")
             print("  - Updates every 5 seconds")
@@ -124,75 +119,58 @@ def main():
     
     print("\nStarting application...")
     
-    if gui_mode:
-        # Run with GUI
-        print("🖥️  Starting GUI interface...")
-        try:
-            gui = AirplaneTrackerGUI(
-                data_source_func=read_aircraft_data,
-                alert_system=alert_system,
-                lcd_controller=lcd_controller,
-                oled_controller=oled_controller
-            )
-            gui.run()
-        except Exception as e:
-            print(f"❌ GUI failed to start: {e}")
-            print("Falling back to console mode...")
-            gui_mode = False
+    # Run in console mode
+    print("📺 Running in console mode...")
+    print("Press Ctrl+C to stop")
     
-    if not gui_mode:
-        # Run in console mode
-        print("📺 Running in console mode...")
-        print("Press Ctrl+C to stop")
+    try:
+        # Start alert system monitoring
+        if alert_system:
+            alert_system.start_monitoring(read_aircraft_data, 5)
+            print("Alert monitoring started")
         
-        try:
-            # Start alert system monitoring
-            if alert_system:
-                alert_system.start_monitoring(read_aircraft_data, 5)
-                print("Alert monitoring started")
-            
-            # Start LCD cycling
-            if lcd_controller:
-                lcd_controller.start_cycling_display(read_aircraft_data, 5)
-                print("LCD display started")
-            
-            # Start OLED cycling
-            if oled_controller:
-                oled_controller.start_cycling_display(read_aircraft_data, 3)
-                print("OLED display started")
-            
-            # Main console loop
-            import time
-            while True:
-                aircraft_data = read_aircraft_data()
-                if aircraft_data and 'aircraft' in aircraft_data:
-                    aircraft_count = len(aircraft_data['aircraft'])
-                    timestamp = datetime.now().strftime('%H:%M:%S')
-                    print(f"[{timestamp}] Aircraft detected: {aircraft_count}")
-                    
-                    # Show aircraft with callsigns
-                    with_callsign = [a for a in aircraft_data['aircraft'] 
-                                   if a.get('flight', '').strip()]
-                    if with_callsign:
-                        print(f"  Aircraft with callsigns: {len(with_callsign)}")
-                        for aircraft in with_callsign[:5]:  # Show first 5
-                            flight = aircraft.get('flight', '').strip()
-                            alt = aircraft.get('alt_baro') or aircraft.get('alt_geom')
-                            alt_str = f"{alt}ft" if alt else "N/A"
-                            print(f"    {flight} - {alt_str}")
+        # Start LCD cycling
+        if lcd_controller:
+            lcd_controller.start_cycling_display(read_aircraft_data, 5)
+            print("LCD display started")
+        
+        # Start OLED cycling
+        if oled_controller:
+            oled_controller.start_cycling_display(read_aircraft_data, 3)
+            print("OLED display started")
+        
+        # Main console loop
+        import time
+        while True:
+            aircraft_data = read_aircraft_data()
+            if aircraft_data and 'aircraft' in aircraft_data:
+                aircraft_count = len(aircraft_data['aircraft'])
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                print(f"[{timestamp}] Aircraft detected: {aircraft_count}")
                 
-                time.sleep(10)  # Update every 10 seconds in console mode
-                
-        except KeyboardInterrupt:
-            print("\nShutting down...")
-        finally:
-            # Cleanup
-            if alert_system:
-                alert_system.stop_monitoring()
-            if lcd_controller:
-                lcd_controller.cleanup()
-            if oled_controller:
-                oled_controller.cleanup()
+                # Show aircraft with callsigns
+                with_callsign = [a for a in aircraft_data['aircraft'] 
+                               if a.get('flight', '').strip()]
+                if with_callsign:
+                    print(f"  Aircraft with callsigns: {len(with_callsign)}")
+                    for aircraft in with_callsign[:5]:  # Show first 5
+                        flight = aircraft.get('flight', '').strip()
+                        alt = aircraft.get('alt_baro') or aircraft.get('alt_geom')
+                        alt_str = f"{alt}ft" if alt else "N/A"
+                        print(f"    {flight} - {alt_str}")
+            
+            time.sleep(10)  # Update every 10 seconds in console mode
+            
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        # Cleanup
+        if alert_system:
+            alert_system.stop_monitoring()
+        if lcd_controller:
+            lcd_controller.cleanup()
+        if oled_controller:
+            oled_controller.cleanup()
     
     print("Airplane tracker stopped.")
 

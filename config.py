@@ -91,7 +91,6 @@ class AirplaneTrackerConfig:
             # Display
             'display_lcd_enabled': True,
             'display_oled_enabled': True,
-            'display_gui_enabled': True,
             
             # LCD
             'lcd_pin_rs': 26,
@@ -180,10 +179,6 @@ class AirplaneTrackerConfig:
         """Check if OLED display is enabled"""
         return self.get_bool('display_oled_enabled', True)
     
-    def is_gui_enabled(self) -> bool:
-        """Check if GUI is enabled"""
-        return self.get_bool('display_gui_enabled', True)
-    
     def get_lcd_update_interval(self) -> int:
         """Get LCD update interval in seconds"""
         return self.get_int('lcd_update_interval', 5)
@@ -268,8 +263,7 @@ class AirplaneTrackerConfig:
                 # Display Settings
                 f.write("# Display Settings\n")
                 f.write(f"display_lcd_enabled={str(self.is_lcd_enabled()).lower()}\n")
-                f.write(f"display_oled_enabled={str(self.is_oled_enabled()).lower()}\n")
-                f.write(f"display_gui_enabled={str(self.is_gui_enabled()).lower()}\n\n")
+                f.write(f"display_oled_enabled={str(self.is_oled_enabled()).lower()}\n\n")
                 
                 # LCD Configuration
                 f.write("# LCD Configuration\n")

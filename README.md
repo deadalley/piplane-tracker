@@ -1,17 +1,16 @@
 # Airplane Tracker System
 
-A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft using dump1090-fa data, provides alerts for new aircraft, and displays information on both a GUI interface and LCD screen.
+A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft using dump1090-fa data, provides alerts for new aircraft, and displays information on LCD and OLED screens.
 
 ## Features
 
 - 🛩️ **Real-time Aircraft Monitoring**: Reads aircraft data from dump1090-fa
 - 🚨 **New Aircraft Alerts**: Visual and audio alerts when new aircraft enter range
-- 🖥️ **GUI Interface**: User-friendly Tkinter-based interface
-- 📟 **LCD Display**: Shows aircraft information on connected LCD screen (using rpi-lcd)
-- � **OLED Display**: Compact display on 0.91" I2C OLED screen (SSD1306)
-- �📊 **Aircraft Tracking**: Maintains history of detected aircraft
+-  **LCD Display**: Shows aircraft information on connected LCD screen (using rpi-lcd)
+- 🖥️ **OLED Display**: Compact display on 0.91" I2C OLED screen (SSD1306)
+- 📊 **Aircraft Tracking**: Maintains history of detected aircraft
 - 🔄 **Continuous Monitoring**: Automatic updates every 5 seconds
-- 📱 **Console Mode**: Optional headless operation
+- 📱 **Console Mode**: Headless operation with console output
 
 ## Requirements
 
@@ -68,14 +67,9 @@ A comprehensive airplane tracking system for Raspberry Pi that monitors aircraft
 
 ## Usage
 
-### GUI Mode (Recommended)
-```bash
-python3 main.py
-```
-
 ### Console Mode
 ```bash
-python3 main.py --no-gui
+python3 main.py
 ```
 
 ### Additional Options
@@ -91,14 +85,13 @@ python3 main.py --help                      # Show help
 
 ```
 airplane-tracker/
-├── main.py               # Main application entry point (GUI + LCD + Alerts)
+├── main.py               # Main application entry point (Console + LCD + OLED + Alerts)
 ├── aircraft_data.py      # Core aircraft data reading and country detection
 ├── aircraft_display.py   # Aircraft information display and formatting
 ├── display_utils.py      # Utility functions for data formatting
 ├── alert_system.py       # New aircraft detection and alerts
 ├── lcd_controller.py     # LCD display management
 ├── oled_controller.py    # OLED display management
-├── gui_interface.py      # GUI interface
 ├── flight_enhancer.py    # Optional flight data enhancement from APIs
 ├── config.py             # Configuration management
 ├── config                # Configuration file (editable)
@@ -123,7 +116,6 @@ data_source_timeout=10
 # Display Settings
 display_lcd_enabled=true
 display_oled_enabled=true
-display_gui_enabled=true
 
 # LCD Configuration
 lcd_pin_rs=26
@@ -180,9 +172,9 @@ oled_controller = AirplaneOLEDController(
 
 ### Update Intervals
 Modify update intervals in `main.py`:
-- GUI updates: 5 seconds
 - Console updates: 10 seconds
 - Alert checking: 5 seconds
+- LCD/OLED updates: 5/3 seconds respectively
 
 ### Data Source
 The system reads from `/var/run/dump1090-fa/aircraft.json` by default. 
@@ -191,11 +183,10 @@ Change the path in the `config` file:
 data_source_file_path=/your/custom/path/aircraft.json
 ```## Features Explained
 
-### GUI Interface
-- **Aircraft List**: Displays all detected aircraft in a table
-- **Status Display**: Shows total aircraft count and new aircraft alerts
-- **Alert Log**: Scrollable log of all aircraft events
-- **Control Buttons**: Start/stop monitoring, manual refresh, clear alerts
+### Console Mode
+- **Real-time Monitoring**: Displays aircraft count and activity in the terminal
+- **Aircraft Details**: Shows callsigns and altitudes for aircraft with identification
+- **Status Updates**: Regular updates every 10 seconds
 
 ### LCD Display
 - **Cycling Display**: Automatically cycles through aircraft information
@@ -213,7 +204,7 @@ data_source_file_path=/your/custom/path/aircraft.json
 ### Alert System
 - **New Aircraft Detection**: Identifies when aircraft first enter range
 - **Audio Alerts**: Optional sound notifications
-- **Visual Alerts**: GUI and LCD notifications
+- **Visual Alerts**: LCD and OLED notifications
 - **Aircraft History**: Maintains record of all detected aircraft
 
 ## Troubleshooting
@@ -237,10 +228,6 @@ data_source_file_path=/your/custom/path/aircraft.json
    - Verify OLED libraries: `pip3 show adafruit-circuitpython-ssd1306`
    - Run OLED test: `python3 oled_controller.py`
 
-4. **GUI not starting**:
-   - Install tkinter: `sudo apt install python3-tk`
-   - Run in console mode: `python3 main.py --no-gui`
-
 5. **Permission errors**:
    - Run with appropriate permissions
    - Check file permissions: `ls -la /var/run/dump1090-fa/`
@@ -255,11 +242,6 @@ python3 lcd_controller.py
 Test the OLED:
 ```bash
 python3 oled_controller.py
-```
-
-Test the GUI:
-```bash
-python3 gui_interface.py
 ```
 
 Test basic aircraft data reading:
@@ -287,7 +269,7 @@ To run automatically at startup, create a systemd service:
    Type=simple
    User=pi
    WorkingDirectory=/home/pi/Documents/airplane-tracker
-   ExecStart=/usr/bin/python3 main.py --no-gui
+   ExecStart=/usr/bin/python3 main.py
    Restart=always
    
    [Install]
@@ -309,7 +291,6 @@ python3 main.py --sound=alert.wav
 ## Contributing
 
 Feel free to contribute improvements:
-- Enhanced GUI features
 - Additional aircraft data fields
 - Database logging
 - Web interface

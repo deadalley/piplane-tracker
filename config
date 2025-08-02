@@ -9,7 +9,6 @@ data_source_timeout=10
 # Display Settings
 display_lcd_enabled=true
 display_oled_enabled=true
-display_gui_enabled=true
 
 # LCD Configuration
 lcd_update_interval=5
