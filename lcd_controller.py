@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyright: reportPossiblyUnboundVariable=false, reportMissingImports=false
 """
 LCD Display Controller for Airplane Tracker
 Uses rpi-lcd to display airplane information on LCD screen
@@ -6,6 +7,7 @@ Uses rpi-lcd to display airplane information on LCD screen
 
 try:
     from rpi_lcd import LCD
+
     LCD_AVAILABLE = True
 except ImportError:
     LCD_AVAILABLE = False
@@ -15,6 +17,7 @@ import time
 from datetime import datetime
 import threading
 
+
 class AirplaneLCDController:
     def __init__(self):
         self.lcd = None
@@ -22,11 +25,11 @@ class AirplaneLCDController:
         self.current_display_data = []
         self.display_index = 0
         self.last_update = None
-        
+
         if LCD_AVAILABLE:
             try:
                 self.lcd = LCD()
-                
+
                 self.lcd.clear()
                 self.lcd.text("Airplane Tracker", 1)
                 self.lcd.text("Initializing...", 2)
@@ -35,15 +38,15 @@ class AirplaneLCDController:
             except Exception as e:
                 self.lcd = None
                 raise e
-    
+
     def clear_display(self):
         if self.lcd:
             self.lcd.clear()
-    
+
     def turn_off_display(self):
         if self.lcd:
             self.lcd.backlight(False)
-    
+
     def display_text(self, line1, line2=""):
         if self.lcd:
             try:
@@ -58,38 +61,42 @@ class AirplaneLCDController:
         """Display startup message"""
         self.display_text("Airplane Tracker", "Starting up...")
         time.sleep(2)
-    
+
     def display_aircraft_count(self, total_count, new_count=0):
         """
         Display aircraft count
-        
+
         Args:
             total_count (int): Total aircraft detected
             new_count (int): New aircraft count (optional)
         """
         line1 = f"Aircrafts: {total_count}"
-        line2 = f"New: {new_count}" if new_count > 0 else f"Time: {datetime.now().strftime('%H:%M')}"
+        line2 = (
+            f"New: {new_count}"
+            if new_count > 0
+            else f"Time: {datetime.now().strftime('%H:%M')}"
+        )
         self.display_text(line1, line2)
-    
+
     def display_aircraft_info(self, aircraft):
         """
         Display individual aircraft information
-        
+
         Args:
             aircraft (dict): Aircraft data
         """
-        flight = aircraft.get('flight', '').strip()
-        hex_code = aircraft.get('hex', '')
-        
+        flight = aircraft.get("flight", "").strip()
+        hex_code = aircraft.get("hex", "")
+
         if flight:
             line1 = flight[:16]
         else:
             line1 = f"ICAO: {hex_code[:10]}"
-        
+
         # Display altitude and speed if available
-        altitude = aircraft.get('alt_baro') or aircraft.get('alt_geom')
-        speed = aircraft.get('gs')
-        
+        altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+        speed = aircraft.get("gs")
+
         if altitude and speed:
             line2 = f"{altitude}ft {speed}kt"
         elif altitude:
@@ -98,72 +105,71 @@ class AirplaneLCDController:
             line2 = f"Speed: {speed}kt"
         else:
             line2 = "No alt/speed"
-        
+
         self.display_text(line1, line2[:16])
-    
+
     def display_alert(self, new_aircraft_count):
         self.display_text("** ALERT **", f"New: {new_aircraft_count}")
         time.sleep(3)  # Show alert for 3 seconds
-    
+
     def display_no_aircraft(self):
         self.display_text("No Aircraft", f"Time: {datetime.now().strftime('%H:%M:%S')}")
-    
+
     def display_error(self, error_msg):
         self.display_text("ERROR", error_msg[:16])
-    
+
     def start_cycling_display(self, aircraft_data_func, interval=5):
         """
         Start cycling through aircraft information on display
-        
+
         Args:
             aircraft_data_func: Function that returns current aircraft data
             interval (int): Display cycle interval in seconds
         """
         self.display_active = True
-        
+
         def display_loop():
             while self.display_active:
                 try:
                     aircraft_data = aircraft_data_func()
-                    
-                    if not aircraft_data or 'aircraft' not in aircraft_data:
+
+                    if not aircraft_data or "aircraft" not in aircraft_data:
                         self.display_error("No data")
                         time.sleep(interval)
                         continue
-                    
-                    aircraft_list = aircraft_data['aircraft']
-                    
+
+                    aircraft_list = aircraft_data["aircraft"]
+
                     if not aircraft_list:
                         self.display_no_aircraft()
                         time.sleep(interval)
                         continue
-                    
+
                     # First show the count
                     self.display_aircraft_count(len(aircraft_list))
                     time.sleep(interval)
-                    
+
                     # Then cycle through individual aircraft
                     for aircraft in aircraft_list:
                         if not self.display_active:
                             break
                         self.display_aircraft_info(aircraft)
                         time.sleep(interval)
-                    
+
                 except Exception as e:
                     print(f"Error in LCD display loop: {e}")
                     self.display_error("Display error")
                     time.sleep(interval)
-        
+
         display_thread = threading.Thread(target=display_loop, daemon=True)
         display_thread.start()
-    
+
     def stop_cycling_display(self):
         """Stop the cycling display"""
         self.display_active = False
         self.clear_display()
         self.turn_off_display()
-        
-    
+
     def cleanup(self):
         """Cleanup LCD resources"""
         self.stop_cycling_display()
@@ -176,4 +182,3 @@ class AirplaneLCDController:
                 self.lcd.clear()
             except Exception as e:
                 print(f"Error during LCD cleanup: {e}")
-

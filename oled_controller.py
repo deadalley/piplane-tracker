@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyright: reportPossiblyUnboundVariable=false, reportMissingImports=false, reportOptionalMemberAccess=false
 """
 OLED Display Controller for Airplane Tracker
 Uses 0.91 inch I2C OLED display (typically SSD1306 128x32)
@@ -9,22 +10,25 @@ try:
     import busio
     from adafruit_ssd1306 import SSD1306_I2C
     from PIL import Image, ImageDraw, ImageFont
+
     OLED_AVAILABLE = True
 except ImportError:
     OLED_AVAILABLE = False
-    print("Warning: OLED libraries not available. Install adafruit-circuitpython-ssd1306 and pillow")
+    print(
+        "Warning: OLED libraries not available. Install adafruit-circuitpython-ssd1306 and pillow"
+    )
 
 import time
 from datetime import datetime
-from typing import List, Dict
 import threading
 from config import get_config
+
 
 class AirplaneOLEDController:
     def __init__(self, width=None, height=None, i2c_address=None):
         """
         Initialize OLED controller for 0.91 inch display
-        
+
         Args:
             width (int): Display width in pixels (uses config if None)
             height (int): Display height in pixels (uses config if None)
@@ -32,58 +36,64 @@ class AirplaneOLEDController:
         """
         # Get configuration
         config = get_config()
-        
+
         self.width = width or config.get_oled_width()
         self.height = height or config.get_oled_height()
         i2c_address = i2c_address or config.get_oled_i2c_address()
-        
+
         self.display = None
         self.display_active = False
         self.current_page = 0
         self.total_pages = 0
         self.aircraft_data = []
-        
+
         if OLED_AVAILABLE:
             try:
                 # Initialize I2C
                 i2c = busio.I2C(board.SCL, board.SDA)
-                
+
                 # Initialize display
-                self.display = SSD1306_I2C(self.width, self.height, i2c, addr=i2c_address)
-                
+                self.display = SSD1306_I2C(
+                    self.width, self.height, i2c, addr=i2c_address
+                )
+
                 # Clear display
                 self.display.fill(0)
                 self.display.show()
-                
+
                 # Create image for drawing
                 self.image = Image.new("1", (self.width, self.height))
                 self.draw = ImageDraw.Draw(self.image)
-                
+
                 # Try to load a font (fallback to default if not available)
                 try:
-                    self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 8)
-                    self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+                    self.font_small = ImageFont.truetype(
+                        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 8
+                    )
+                    self.font_medium = ImageFont.truetype(
+                        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10
+                    )
                 except:
                     self.font_small = ImageFont.load_default()
                     self.font_medium = ImageFont.load_default()
-                
+
                 self.display_startup_message()
                 print("OLED initialized successfully")
-                
+
             except Exception as e:
                 self.display = None
                 raise e
-    
+
     def clear_display(self):
         if self.display:
             self.display.fill(0)
             self.display.show()
-    
+
     def draw_text(self, text, x, y, font=None):
         if not font:
             font = self.font_small
         self.draw.text((x, y), text, font=font, fill=255)
-    
+
     def show_display(self):
         """Update the physical display"""
         if self.display:
@@ -91,25 +101,27 @@ class AirplaneOLEDController:
             self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
             return True
         return False
-    
+
     def display_startup_message(self):
         """Display startup message"""
         if not self.show_display():
             print("OLED: Airplane Tracker | Starting...")
             return
-        
+
         self.draw_text("Airplane Tracker", 0, 0, self.font_medium)
         self.draw_text("Initializing...", 0, 12, self.font_small)
-        self.draw_text(f"v1.0 {datetime.now().strftime('%H:%M')}", 0, 22, self.font_small)
-        
+        self.draw_text(
+            f"v1.0 {datetime.now().strftime('%H:%M')}", 0, 22, self.font_small
+        )
+
         self.display.image(self.image)
         self.display.show()
         time.sleep(2)
-    
+
     def display_aircraft_count(self, total_count, new_count=0):
         """
         Display aircraft count summary
-        
+
         Args:
             total_count (int): Total aircraft detected
             new_count (int): New aircraft count
@@ -117,87 +129,87 @@ class AirplaneOLEDController:
         if not self.show_display():
             print(f"OLED: Aircraft: {total_count} | New: {new_count}")
             return
-        
+
         # Title
         self.draw_text("AIRCRAFT TRACKER", 0, 0, self.font_small)
-        
+
         # Aircraft count
         self.draw_text(f"Total: {total_count}", 0, 10, self.font_medium)
-        
+
         # New aircraft (if any)
         if new_count > 0:
             self.draw_text(f"NEW: {new_count}!", 70, 10, self.font_medium)
-        
+
         # Time
-        time_str = datetime.now().strftime('%H:%M:%S')
+        time_str = datetime.now().strftime("%H:%M:%S")
         self.draw_text(f"Time: {time_str}", 0, 22, self.font_small)
-        
+
         self.display.image(self.image)
         self.display.show()
-    
+
     def display_aircraft_info(self, aircraft, page_info=""):
         """
         Display individual aircraft information
-        
+
         Args:
             aircraft (dict): Aircraft data
             page_info (str): Page information (e.g., "1/3")
         """
         if not self.show_display():
-            flight = aircraft.get('flight', '').strip()
-            hex_code = aircraft.get('hex', '')
-            alt = aircraft.get('alt_baro') or aircraft.get('alt_geom')
-            speed = aircraft.get('gs')
+            flight = aircraft.get("flight", "").strip()
+            hex_code = aircraft.get("hex", "")
+            alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+            speed = aircraft.get("gs")
             print(f"OLED: {flight or hex_code[:6]} | {alt}ft {speed}kt | {page_info}")
             return
-        
-        flight = aircraft.get('flight', '').strip()
-        hex_code = aircraft.get('hex', '')
-        
+
+        flight = aircraft.get("flight", "").strip()
+        hex_code = aircraft.get("hex", "")
+
         # Line 1: Flight/Callsign or ICAO
         if flight:
             self.draw_text(f"✈ {flight}", 0, 0, self.font_medium)
         else:
             self.draw_text(f"✈ {hex_code[:8]}", 0, 0, self.font_small)
-        
+
         # Page indicator
         if page_info:
             page_width = len(page_info) * 6
             self.draw_text(page_info, self.width - page_width, 0, self.font_small)
-        
+
         # Line 2: Altitude and Speed
-        altitude = aircraft.get('alt_baro') or aircraft.get('alt_geom')
-        speed = aircraft.get('gs')
-        
+        altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+        speed = aircraft.get("gs")
+
         alt_text = f"{altitude}ft" if altitude else "N/A"
         speed_text = f"{speed}kt" if speed else "N/A"
-        
+
         self.draw_text(f"Alt: {alt_text}", 0, 11, self.font_small)
         self.draw_text(f"Spd: {speed_text}", 64, 11, self.font_small)
-        
+
         # Line 3: Heading and Position status
-        track = aircraft.get('track')
-        lat = aircraft.get('lat')
-        lon = aircraft.get('lon')
-        
+        track = aircraft.get("track")
+        lat = aircraft.get("lat")
+        lon = aircraft.get("lon")
+
         if track is not None:
             self.draw_text(f"Hdg: {int(track)}°", 0, 22, self.font_small)
         else:
             self.draw_text("Hdg: N/A", 0, 22, self.font_small)
-        
+
         # Position indicator
         if lat and lon:
             self.draw_text("GPS✓", 88, 22, self.font_small)
         else:
             self.draw_text("GPS✗", 88, 22, self.font_small)
-        
+
         self.display.image(self.image)
         self.display.show()
-    
+
     def display_alert(self, new_aircraft_count, flight_name=""):
         """
         Display alert for new aircraft
-        
+
         Args:
             new_aircraft_count (int): Number of new aircraft
             flight_name (str): Flight name if available
@@ -205,50 +217,52 @@ class AirplaneOLEDController:
         if not self.show_display():
             print(f"OLED: 🚨 ALERT! New: {new_aircraft_count} ({flight_name})")
             return
-        
+
         # Alert header
         self.draw_text("🚨 AIRCRAFT ALERT 🚨", 0, 0, self.font_small)
-        
+
         # New aircraft count
         self.draw_text(f"New Aircraft: {new_aircraft_count}", 0, 11, self.font_medium)
-        
+
         # Flight name if available
         if flight_name:
             flight_display = flight_name[:16]  # Truncate if too long
             self.draw_text(f"Flight: {flight_display}", 0, 22, self.font_small)
         else:
             self.draw_text("Unknown flight", 0, 22, self.font_small)
-        
+
         self.display.image(self.image)
         self.display.show()
         time.sleep(3)  # Show alert for 3 seconds
-    
+
     def display_no_aircraft(self):
         """Display message when no aircraft are detected"""
         if not self.show_display():
             print(f"OLED: No Aircraft | {datetime.now().strftime('%H:%M:%S')}")
             return
-        
+
         self.draw_text("AIRPLANE TRACKER", 0, 0, self.font_small)
         self.draw_text("No Aircraft", 0, 11, self.font_medium)
-        self.draw_text(f"Scanning... {datetime.now().strftime('%H:%M:%S')}", 0, 22, self.font_small)
-        
+        self.draw_text(
+            f"Scanning... {datetime.now().strftime('%H:%M:%S')}", 0, 22, self.font_small
+        )
+
         self.display.image(self.image)
         self.display.show()
-    
+
     def display_error(self, error_msg):
         """
         Display error message
-        
+
         Args:
             error_msg (str): Error message to display
         """
         if not self.show_display():
             print(f"OLED: ERROR - {error_msg}")
             return
-        
+
         self.draw_text("ERROR", 0, 0, self.font_medium)
-        
+
         # Split long error messages
         if len(error_msg) > 20:
             self.draw_text(error_msg[:20], 0, 11, self.font_small)
@@ -256,78 +270,82 @@ class AirplaneOLEDController:
                 self.draw_text(error_msg[20:40], 0, 22, self.font_small)
         else:
             self.draw_text(error_msg, 0, 11, self.font_small)
-        
+
         self.display.image(self.image)
         self.display.show()
-    
+
     def start_cycling_display(self, aircraft_data_func, interval=3):
         """
         Start cycling through aircraft information on display
-        
+
         Args:
             aircraft_data_func: Function that returns current aircraft data
             interval (int): Display cycle interval in seconds
         """
         self.display_active = True
-        
+
         def display_loop():
             while self.display_active:
                 try:
                     aircraft_data = aircraft_data_func()
-                    
-                    if not aircraft_data or 'aircraft' not in aircraft_data:
+
+                    if not aircraft_data or "aircraft" not in aircraft_data:
                         self.display_error("No data")
                         time.sleep(interval)
                         continue
-                    
-                    aircraft_list = aircraft_data['aircraft']
-                    
+
+                    aircraft_list = aircraft_data["aircraft"]
+
                     if not aircraft_list:
                         self.display_no_aircraft()
                         time.sleep(interval)
                         continue
-                    
+
                     # First show the count
                     self.display_aircraft_count(len(aircraft_list))
                     time.sleep(interval)
-                    
+
                     # Then cycle through individual aircraft
                     self.total_pages = len(aircraft_list)
                     for i, aircraft in enumerate(aircraft_list):
                         if not self.display_active:
                             break
-                        
+
                         page_info = f"{i+1}/{self.total_pages}"
                         self.display_aircraft_info(aircraft, page_info)
                         self.current_page = i
                         time.sleep(interval)
-                    
+
                 except Exception as e:
                     print(f"Error in OLED display loop: {e}")
                     self.display_error("Display error")
                     time.sleep(interval)
-        
+
         display_thread = threading.Thread(target=display_loop, daemon=True)
         display_thread.start()
-    
+
     def stop_cycling_display(self):
         """Stop the cycling display"""
         self.display_active = False
         self.clear_display()
-    
+
     def display_system_info(self):
         """Display system information"""
         if not self.show_display():
             print("OLED: System Info")
             return
-        
+
         self.draw_text("SYSTEM INFO", 0, 0, self.font_small)
-        self.draw_text(f"Time: {datetime.now().strftime('%H:%M:%S')}", 0, 10, self.font_small)
-        self.draw_text(f"Date: {datetime.now().strftime('%m/%d')}", 0, 20, self.font_small)
-        
+        self.draw_text(
+            f"Time: {datetime.now().strftime('%H:%M:%S')}", 0, 10, self.font_small
+        )
+        self.draw_text(
+            f"Date: {datetime.now().strftime('%m/%d')}", 0, 20, self.font_small
+        )
+
         self.display.image(self.image)
         self.display.show()
-    
+
     def cleanup(self):
         """Cleanup OLED resources"""
         self.stop_cycling_display()
@@ -335,10 +353,10 @@ class AirplaneOLEDController:
             try:
                 if not self.show_display():
                     return
-                
+
                 self.draw_text("Airplane Tracker", 0, 5, self.font_medium)
                 self.draw_text("Stopped", 0, 20, self.font_small)
-                
+
                 self.display.image(self.image)
                 self.display.show()
                 time.sleep(1)
@@ -346,43 +364,45 @@ class AirplaneOLEDController:
             except Exception as e:
                 print(f"Error during OLED cleanup: {e}")
 
+
 # Test function for OLED
 def test_oled():
     """Test the OLED functionality"""
     oled_controller = AirplaneOLEDController()
-    
+
     # Test basic display
     oled_controller.display_startup_message()
-    
+
     # Test aircraft count display
     oled_controller.display_aircraft_count(5, 2)
     time.sleep(3)
-    
+
     # Test individual aircraft display
     test_aircraft = {
-        'flight': 'UAL123',
-        'hex': 'A12345',
-        'alt_baro': 35000,
-        'gs': 450,
-        'track': 270,
-        'lat': 37.7749,
-        'lon': -122.4194
+        "flight": "UAL123",
+        "hex": "A12345",
+        "alt_baro": 35000,
+        "gs": 450,
+        "track": 270,
+        "lat": 37.7749,
+        "lon": -122.4194,
     }
     oled_controller.display_aircraft_info(test_aircraft, "1/3")
     time.sleep(3)
-    
+
     # Test alert
     oled_controller.display_alert(2, "UAL123")
-    
+
     # Test no aircraft
     oled_controller.display_no_aircraft()
     time.sleep(3)
-    
+
     # Test system info
     oled_controller.display_system_info()
     time.sleep(3)
-    
+
     oled_controller.cleanup()
+
 
 if __name__ == "__main__":
     test_oled()
