@@ -18,19 +18,25 @@ import time
 from datetime import datetime
 from typing import List, Dict
 import threading
+from config import get_config
 
 class AirplaneOLEDController:
-    def __init__(self, width=128, height=32, i2c_address=0x3C):
+    def __init__(self, width=None, height=None, i2c_address=None):
         """
         Initialize OLED controller for 0.91 inch display
         
         Args:
-            width (int): Display width in pixels (default 128)
-            height (int): Display height in pixels (default 32)
-            i2c_address (int): I2C address of the display (default 0x3C)
+            width (int): Display width in pixels (uses config if None)
+            height (int): Display height in pixels (uses config if None)
+            i2c_address (int): I2C address of the display (uses config if None)
         """
-        self.width = width
-        self.height = height
+        # Get configuration
+        config = get_config()
+        
+        self.width = width or config.get_oled_width()
+        self.height = height or config.get_oled_height()
+        i2c_address = i2c_address or config.get_oled_i2c_address()
+        
         self.display = None
         self.display_active = False
         self.current_page = 0

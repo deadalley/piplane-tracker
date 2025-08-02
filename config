@@ -1,0 +1,38 @@
+# Airplane Tracker Configuration
+# Edit these values to customize your airplane tracker settings
+
+# Data Source Settings
+data_source_file_path=/var/run/dump1090-fa/aircraft.json
+data_source_update_interval=5
+data_source_timeout=10
+
+# Display Settings
+display_lcd_enabled=true
+display_oled_enabled=true
+display_gui_enabled=true
+
+# LCD Configuration
+lcd_update_interval=5
+
+# OLED Configuration
+oled_width=128
+oled_height=32
+oled_i2c_address=60
+oled_update_interval=3
+
+# Alert Settings
+alerts_enabled=true
+alerts_sound_enabled=false
+alerts_sound_file=
+alerts_filter_by_callsign=true
+alerts_aircraft_timeout=300
+
+# Logging Settings
+logging_enabled=false
+logging_file_path=aircraft_log.txt
+logging_level=INFO
+
+# Enhancement Settings (API data)
+enhancement_enabled=false
+enhancement_cache_timeout=300
+enhancement_api_rate_limit=1

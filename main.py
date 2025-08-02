@@ -8,6 +8,7 @@ import sys
 import os
 import signal
 from datetime import datetime
+from config import get_config
 
 # Import our modules
 from aircraft_data import read_aircraft_data
@@ -29,14 +30,19 @@ def main():
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
+    # Load configuration
+    config = get_config()
+    print(f"📁 Data source: {config.get_data_source_path()}")
+    print()
+    
     # Register signal handler for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     
-    # Parse command line arguments
-    gui_mode = True
-    lcd_enabled = True
-    oled_enabled = True
-    alert_sound_path = None
+    # Parse command line arguments (override config)
+    gui_mode = config.is_gui_enabled()
+    lcd_enabled = config.is_lcd_enabled()
+    oled_enabled = config.is_oled_enabled()
+    alert_sound_path = config.get_sound_file()
     
     # Check for command line arguments
     for arg in sys.argv[1:]:
@@ -60,6 +66,9 @@ def main():
             print("  --oled-only       Use OLED only (disable LCD)")
             print("  --sound=PATH      Path to alert sound file")
             print("  --help, -h        Show this help message")
+            print("\nConfiguration:")
+            print("  - Edit the 'config' file to change default settings")
+            print("  - Data source, display options, and more can be configured")
             print("\nDefault behavior:")
             print("  - Runs with GUI interface")
             print("  - Enables both LCD and OLED displays (if hardware available)")

@@ -15,16 +15,10 @@ import time
 from datetime import datetime
 from typing import List, Dict
 import threading
+from config import get_config
 
 class AirplaneLCDController:
-    def __init__(self, lcd_pins=None):
-        """
-        Initialize LCD controller
-        
-        Args:
-            lcd_pins (dict): LCD pin configuration (optional)
-                Example: {'rs': 26, 'enable': 19, 'd4': 13, 'd5': 6, 'd6': 5, 'd7': 11}
-        """
+    def __init__(self):
         self.lcd = None
         self.display_active = False
         self.current_display_data = []
@@ -34,6 +28,7 @@ class AirplaneLCDController:
         if LCD_AVAILABLE:
             try:
                 self.lcd = LCD()
+                
                 self.lcd.clear()
                 self.lcd.text("Airplane Tracker", 1)
                 self.lcd.text("Initializing...", 2)

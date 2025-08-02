@@ -100,11 +100,66 @@ airplane-tracker/
 ├── oled_controller.py    # OLED display management
 ├── gui_interface.py      # GUI interface
 ├── flight_enhancer.py    # Optional flight data enhancement from APIs
-├── requirements      # Python dependencies
+├── config.py             # Configuration management
+├── config                # Configuration file (editable)
+├── requirements.txt      # Python dependencies
 └── README.md            # This file
 ```
 
 ## Configuration
+
+### Configuration File (config)
+The application uses a flat `config` file for all settings. Edit this file to customize:
+
+```
+# Airplane Tracker Configuration
+# Edit these values to customize your airplane tracker settings
+
+# Data Source Settings
+data_source_file_path=/var/run/dump1090-fa/aircraft.json
+data_source_update_interval=5
+data_source_timeout=10
+
+# Display Settings
+display_lcd_enabled=true
+display_oled_enabled=true
+display_gui_enabled=true
+
+# LCD Configuration
+lcd_pin_rs=26
+lcd_pin_enable=19
+lcd_pin_d4=13
+lcd_pin_d5=6
+lcd_pin_d6=5
+lcd_pin_d7=11
+lcd_update_interval=5
+
+# OLED Configuration
+oled_width=128
+oled_height=32
+oled_i2c_address=60
+oled_update_interval=3
+
+# Alert Settings
+alerts_enabled=true
+alerts_sound_enabled=false
+alerts_sound_file=
+alerts_filter_by_callsign=true
+alerts_aircraft_timeout=300
+
+# Logging Settings (optional)
+logging_enabled=false
+logging_file_path=aircraft_log.txt
+logging_level=INFO
+
+# Enhancement Settings (API data - optional)
+enhancement_enabled=false
+enhancement_cache_timeout=300
+enhancement_api_rate_limit=1
+```
+
+### Legacy Configuration Methods
+You can still override settings programmatically:
 
 ### LCD Pin Configuration
 Edit `lcd_controller.py` to change LCD pin connections:
@@ -131,9 +186,10 @@ Modify update intervals in `main.py`:
 
 ### Data Source
 The system reads from `/var/run/dump1090-fa/aircraft.json` by default. 
-Change the path in `aircraft_data.py` if your installation differs.
-
-## Features Explained
+Change the path in the `config` file:
+```
+data_source_file_path=/your/custom/path/aircraft.json
+```## Features Explained
 
 ### GUI Interface
 - **Aircraft List**: Displays all detected aircraft in a table
