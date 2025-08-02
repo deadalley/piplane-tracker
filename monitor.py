@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 import threading
 import json
 import os
+import sys
 from config import get_config
 
 
@@ -39,6 +40,10 @@ class PiPlaneMonitor:
         self.showing_new_aircraft = False
         self.new_aircraft_display_time = 10  # seconds to show new aircraft info
         self.new_aircraft_start_time = None
+
+        # Keyboard input handling
+        self.exit_requested = False
+        self.keyboard_thread = None
 
         # Set up data source path
         if file_path is None:
@@ -150,6 +155,49 @@ class PiPlaneMonitor:
                     print(f"    {flight} - {alt_str}")
         except Exception as e:
             print(f"Error updating console: {e}")
+
+    def _check_keyboard_input(self):
+        """Check for keyboard input - simplified approach"""
+        # For this implementation, we'll rely on the main thread to handle ESC
+        # The keyboard checking will be done externally
+        return self.exit_requested
+
+    def _keyboard_listener(self):
+        """Background thread to listen for exit requests"""
+        while self.running and not self.exit_requested:
+            time.sleep(0.1)
+
+    def list_known_aircraft(self):
+        """List all known aircraft in a formatted way"""
+        print("\n" + "=" * 60)
+        print("📋 KNOWN AIRCRAFT HISTORY")
+        print("=" * 60)
+
+        if not self.aircraft_history:
+            print("No aircraft have been detected yet.")
+            return
+
+        print(f"Total aircraft tracked: {len(self.aircraft_history)}")
+        print()
+
+        # Sort by last seen time (most recent first)
+        sorted_aircraft = sorted(
+            self.aircraft_history.items(), key=lambda x: x[1]["last_seen"], reverse=True
+        )
+
+        for hex_code, info in sorted_aircraft:
+            flight = info.get("flight", "Unknown")
+            first_seen = info["first_seen"].strftime("%Y-%m-%d %H:%M:%S")
+            last_seen = info["last_seen"].strftime("%Y-%m-%d %H:%M:%S")
+            position_count = len(info.get("positions", []))
+
+            print(f"✈️  {flight} (ICAO: {hex_code})")
+            print(f"   First seen: {first_seen}")
+            print(f"   Last seen:  {last_seen}")
+            print(f"   Positions tracked: {position_count}")
+            print()
+
+        print("=" * 60)
 
     def read_aircraft_data(self) -> Optional[Dict]:
         """
@@ -303,11 +351,18 @@ class PiPlaneMonitor:
             interval (int): Update interval in seconds for all components
         """
         self.running = True
+        self.exit_requested = False
+
+        # Start keyboard listener thread
+        self.keyboard_thread = threading.Thread(
+            target=self._keyboard_listener, daemon=True
+        )
+        self.keyboard_thread.start()
 
         def monitor_loop():
             current_new_aircraft_index = 0
 
-            while self.running:
+            while self.running and not self.exit_requested:
                 try:
                     aircraft_data = self.read_aircraft_data()
 
@@ -361,6 +416,21 @@ class PiPlaneMonitor:
         monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
         monitor_thread.start()
 
+        # Wait for exit signal
+        try:
+            while self.running and not self.exit_requested:
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            self.exit_requested = True
+
+        print("\n⏹️  Monitoring stopped (ESC pressed or interrupted)")
+        return self.exit_requested
+
+    def request_exit(self):
+        """Request monitoring to stop (called externally)"""
+        self.exit_requested = True
+
     def stop_monitoring(self):
         """Stop monitoring"""
         self.running = False
+        self.exit_requested = True
