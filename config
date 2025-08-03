@@ -41,3 +41,9 @@ opensky_enabled=false
 opensky_rate_limit=1.0
 opensky_cache_timeout=300
 opensky_timeout=10
+
+# HexDB.io API Settings
+hexdb_enabled=true
+hexdb_rate_limit=1.0
+hexdb_cache_timeout=300
+hexdb_timeout=10
