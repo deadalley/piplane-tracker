@@ -46,7 +46,7 @@ class PiPlaneVisualizationService:
 
             self.screen_width, self.screen_height = shutil.get_terminal_size()
         except:
-            self.screen_width = 60
+            self.screen_width = 70
             self.screen_height = 20
 
     def _clear_screen(self):
@@ -87,9 +87,9 @@ class PiPlaneVisualizationService:
         self._clear_screen()
         self._cleanup_new_tags()
 
-        print("=" * 60)
+        print("=" * 66)
         print("🛩️  PiPlane Tracker v1.0")
-        print("=" * 60)
+        print("=" * 66)
         print()
 
         aircraft_list = self._get_sorted_aircraft_list()
@@ -134,12 +134,12 @@ class PiPlaneVisualizationService:
             print(f"... and {len(aircraft_list) - 15} more aircraft")
 
         print()
-        print("-" * 60)
+        print("-" * 66)
         print()
         print("  [Enter] Refresh")
         print("  [1] Aircraft Details")
         print("  [Q] Quit")
-        print("=" * 60)
+        print("=" * 66)
         print(">>> ", end="", flush=True)
 
     def _render_aircraft_detail(self, hex_code: str):
@@ -154,7 +154,7 @@ class PiPlaneVisualizationService:
         info = self.aircraft_history[hex_code]
 
         print("🛩️  PiPlane Tracker - Aircraft Details")
-        print("=" * 60)
+        print("=" * 66)
         print()
 
         # Basic information
@@ -205,7 +205,7 @@ class PiPlaneVisualizationService:
                 print(f"   {i+1}. {time_str} - {pos['lat']:.6f}, {pos['lon']:.6f}")
 
         print()
-        print("-" * 60)
+        print("-" * 66)
         print("[ENTER] Return to aircraft list")
         print(">>> ", end="", flush=True)
 
