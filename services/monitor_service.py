@@ -142,10 +142,7 @@ class PiPlaneMonitorService:
         # Use list() to create a copy of keys to avoid modification during iteration
         for hex_code in list(self.aircraft_history.keys()):
             if hex_code not in current_hex_codes:
-                aircraft_to_remove = self.aircraft_history[hex_code]
-                last_seen = aircraft_to_remove["last_seen"]
-                if (current_time - last_seen).total_seconds() > 300:  # 5 minutes
-                    aircrafts_to_remove.append(hex_code)
+                aircrafts_to_remove.append(hex_code)
 
         for hex_code in aircrafts_to_remove:
             del self.aircraft_history[hex_code]
