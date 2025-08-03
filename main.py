@@ -16,7 +16,6 @@ Features:
 - Dual display support (16x2 LCD and 128x32 OLED)
 - Aircraft history tracking and review
 - Configurable settings via flat-file configuration
-- OpenSky Network API integration for enhanced data
 
 Author: Your Name
 Version: 1.0
