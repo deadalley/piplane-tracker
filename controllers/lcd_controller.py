@@ -13,8 +13,13 @@ except ImportError:
     LCD_AVAILABLE = False
     print("Warning: rpi-lcd not available. LCD functionality disabled.")
 
+import os
+import sys
 import time
 from datetime import datetime
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from common.get_country_from_icao import get_country_from_icao
 
 
 class PiPlaneLCDController:
@@ -80,11 +85,14 @@ class PiPlaneLCDController:
         """
         flight = aircraft.get("flight", "").strip()
         hex_code = aircraft.get("hex", "")
+        country = get_country_from_icao(hex_code)
 
         if flight:
             line1 = flight[:16]
         else:
             line1 = f"ICAO: {hex_code[:10]}"
+
+        line1 += f" [{country}]" if country else ""
 
         # Display altitude and speed if available
         altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")

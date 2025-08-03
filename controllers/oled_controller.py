@@ -18,9 +18,14 @@ except ImportError:
         "Warning: OLED libraries not available. Install adafruit-circuitpython-ssd1306 and pillow"
     )
 
+import os
+import sys
 import time
 from datetime import datetime
 from config import get_config
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from common.get_country_from_icao import get_country_from_icao
 
 
 class PiPlaneOLEDController:
@@ -160,7 +165,7 @@ class PiPlaneOLEDController:
         self.display.image(self.image)
         self.display.show()
 
-    def display_aircraft_info(self, aircraft, page_info="", interval=2):
+    def display_aircraft_info(self, aircraft, interval=2):
         """
         Display individual aircraft information
 
@@ -173,6 +178,9 @@ class PiPlaneOLEDController:
 
         flight = aircraft.get("flight", "").strip()
         hex_code = aircraft.get("hex", "")
+        altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")
+        speed = aircraft.get("gs")
+        country = get_country_from_icao(hex_code)
 
         # Line 1: Flight/Callsign or ICAO
         if flight:
@@ -180,36 +188,16 @@ class PiPlaneOLEDController:
         else:
             self.draw_text(f"✈ {hex_code[:8]}", 0, 0, self.font_small)
 
-        # Page indicator
-        if page_info:
-            page_width = len(page_info) * 6
-            self.draw_text(page_info, self.width - page_width, 0, self.font_small)
+        # # Line 2: Country
+        country_text = f"{country}" if country else ""
+        self.draw_text(f"Country: {country_text}", 0, 11, self.font_small)
 
-        # Line 2: Altitude and Speed
-        altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")
-        speed = aircraft.get("gs")
-
+        # # Line 3: Altitude and Speed
         alt_text = f"{altitude}ft" if altitude else "N/A"
         speed_text = f"{speed}kt" if speed else "N/A"
 
-        self.draw_text(f"Alt: {alt_text}", 0, 11, self.font_small)
-        self.draw_text(f"Spd: {speed_text}", 64, 11, self.font_small)
-
-        # Line 3: Heading and Position status
-        track = aircraft.get("track")
-        lat = aircraft.get("lat")
-        lon = aircraft.get("lon")
-
-        if track is not None:
-            self.draw_text(f"Hdg: {int(track)}°", 0, 22, self.font_small)
-        else:
-            self.draw_text("Hdg: N/A", 0, 22, self.font_small)
-
-        # Position indicator
-        if lat and lon:
-            self.draw_text("GPS✓", 88, 22, self.font_small)
-        else:
-            self.draw_text("GPS✗", 88, 22, self.font_small)
+        self.draw_text(f"Alt: {alt_text}", 0, 22, self.font_small)
+        self.draw_text(f"Spd: {speed_text}", 64, 22, self.font_small)
 
         self.display.image(self.image)
         self.display.show()

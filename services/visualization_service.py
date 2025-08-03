@@ -6,11 +6,10 @@ Provides simple console interface for aircraft monitoring
 
 import os
 import sys
-import threading
 import time
 import select
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
+from datetime import datetime
+from typing import Dict, List, Optional
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from common.get_country_from_icao import get_country_from_icao
@@ -167,7 +166,7 @@ class PiPlaneVisualizationService:
         # Flight data information
         altitude = info.get("altitude")
         speed = info.get("speed")
-        aircraft_type = info.get("aircraft_type", "")
+        aircraft_type = info.get("aircraft_type", "")  # TODO: implement
 
         print(f"📏 Altitude: {f'{altitude:,} ft' if altitude is not None else 'N/A'}")
         print(f"🏃 Speed: {f'{speed} knots' if speed is not None else 'N/A'}")
