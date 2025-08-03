@@ -171,10 +171,6 @@ class PiPlaneMonitorService:
         enhanced_aircraft = aircraft
         if self.is_hexdb_enabled:
             enhanced_aircraft = enhance_aircraft_data(aircraft)
-            if enhanced_aircraft != aircraft:
-                print(
-                    f"✅ Enhanced data for {hex_code}: {enhanced_aircraft.get('aircraft_type', 'N/A')} - {enhanced_aircraft.get('registration', 'N/A')}"
-                )
 
         self.aircraft_history[hex_code] = {
             "first_seen": datetime.now(),
