@@ -155,6 +155,7 @@ class PiPlaneOLEDController:
         speed = aircraft.get("gs")
         country_code = get_country_from_icao(hex_code)
         country = get_country_name(country_code)
+        aircraft_type = aircraft.get("aircraft_type")
 
         # Line 1: Flight/Callsign or ICAO
         if flight:
@@ -162,16 +163,21 @@ class PiPlaneOLEDController:
         else:
             self.draw_text(f"✈ {hex_code[:8]}", 0, 0, self.font_small)
 
-        # # Line 2: Country
+        # Line 2: Country
         country_text = f"{country}" if country else ""
         self.draw_text(f"Country: {country_text}", 0, 11, self.font_small)
 
-        # # Line 3: Altitude and Speed
+        # Line 3: Altitude and Speed
         alt_text = f"{altitude}ft" if altitude else "N/A"
         speed_text = f"{speed}kt" if speed else "N/A"
 
         self.draw_text(f"Alt: {alt_text}", 0, 22, self.font_small)
         self.draw_text(f"Spd: {speed_text}", 64, 22, self.font_small)
+
+        # Line 3: Aircraft Type and Registration
+        print(aircraft_type)
+        if aircraft_type:
+            self.draw_text(f"Aircraft: {aircraft_type}", 0, 33, self.font_small)
 
         self.display.image(self.image)
         self.display.show()
