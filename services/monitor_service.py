@@ -164,6 +164,8 @@ class PiPlaneMonitorService:
             "first_seen": datetime.now(),
             "last_seen": datetime.now(),
             "flight": aircraft.get("flight", "").strip(),
+            "altitude": aircraft.get("alt_baro"),
+            "speed": aircraft.get("gs"),
             "positions": [],
         }
 
@@ -185,6 +187,12 @@ class PiPlaneMonitorService:
 
         if hex_code in self.aircraft_history:
             self.aircraft_history[hex_code]["last_seen"] = datetime.now()
+
+            # Update dynamic fields that may change
+            if aircraft.get("alt_baro") is not None:
+                self.aircraft_history[hex_code]["altitude"] = aircraft.get("alt_baro")
+            if aircraft.get("gs") is not None:
+                self.aircraft_history[hex_code]["speed"] = aircraft.get("gs")
 
             # Add position if available
             if aircraft.get("lat") and aircraft.get("lon"):
