@@ -22,7 +22,6 @@ Configuration Categories:
 - OLED Hardware: Dimensions, I2C address, update interval settings
 - Sound Alert System: Audio notification settings
 - HexDB.io API: HexDB API configuration
-- Enhancement System: Aircraft data enhancement settings
 
 Usage:
     # Get global configuration instance
@@ -400,35 +399,6 @@ class PiPlaneTrackerConfig:
             int: HTTP request timeout in seconds (default: 10)
         """
         return self._get_int("hexdb_timeout", 10)
-
-    # === ENHANCEMENT CONFIGURATION METHODS ===
-
-    def is_enhancement_enabled(self) -> bool:
-        """
-        Check if aircraft data enhancement is enabled.
-
-        Returns:
-            bool: True if data enhancement should be used (default: False)
-        """
-        return self._get_bool("enhancement_enabled", False)
-
-    def get_enhancement_cache_timeout(self) -> int:
-        """
-        Get enhancement cache timeout in seconds.
-
-        Returns:
-            int: Cache timeout in seconds (default: 300)
-        """
-        return self._get_int("enhancement_cache_timeout", 300)
-
-    def get_enhancement_api_rate_limit(self) -> float:
-        """
-        Get enhancement API rate limit in seconds between requests.
-
-        Returns:
-            float: Minimum seconds between API calls (default: 1.0)
-        """
-        return self._get_float("enhancement_api_rate_limit", 1.0)
 
 
 # === GLOBAL CONFIGURATION MANAGEMENT ===
