@@ -210,7 +210,7 @@ def main():
     print("\n🔧 Initializing displays...")
     lcd_controller, oled_controller = initialize_displays()
 
-        # Initialize monitor system
+    # Initialize monitor system
     try:
         monitor = PiPlaneMonitorService(
             lcd_controller=lcd_controller,
@@ -244,8 +244,6 @@ def main():
         if oled_controller:
             oled_controller.cleanup()
         print("✅ Cleanup complete")
-
-    print("\nPiPlane Tracker stopped")
 
 
 if __name__ == "__main__":

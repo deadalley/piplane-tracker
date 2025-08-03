@@ -265,7 +265,6 @@ class PiPlaneVisualizationService:
             print(f"Error in visualization loop: {e}")
         finally:
             self._clear_screen()
-            print("👋 PiPlane Tracker visualization stopped")
 
     def start(self):
         """Start the visualization service"""
@@ -286,6 +285,13 @@ class PiPlaneVisualizationService:
         self.auto_refresh_needed = (
             True  # Trigger immediate refresh when new aircraft is added
         )
+
+    def remove_aircraft(self, hex_codes: set[str]):
+        """Remove aircraft from new tags when they're removed from history"""
+        for hex_code in hex_codes:
+            if hex_code in self.new_aircraft_tags:
+                del self.new_aircraft_tags[hex_code]
+        self.auto_refresh_needed = True  # Trigger refresh when aircraft are removed
 
     def update_aircraft_history(self, aircraft_history: Dict[str, dict]):
         """Update the aircraft history reference"""

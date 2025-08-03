@@ -139,7 +139,8 @@ class PiPlaneMonitorService:
             aircraft.get("hex") for aircraft in current_aircrafts if aircraft.get("hex")
         }
 
-        for hex_code in self.aircraft_history:
+        # Use list() to create a copy of keys to avoid modification during iteration
+        for hex_code in list(self.aircraft_history.keys()):
             if hex_code not in current_hex_codes:
                 aircraft_to_remove = self.aircraft_history[hex_code]
                 last_seen = aircraft_to_remove["last_seen"]
@@ -238,7 +239,8 @@ class PiPlaneMonitorService:
         for aircraft in existing_aircrafts:
             self._update_aircraft_info(aircraft)
 
-        self._cleanup_old_aircrafts(existing_aircrafts)
+        all_current_aircrafts = new_aircrafts + existing_aircrafts
+        self._cleanup_old_aircrafts(all_current_aircrafts)
 
     def _update_new_aircrafts_queue(self, new_aircrafts: List[dict]):
         """Distribute new aircrafts to all display services"""
@@ -268,7 +270,8 @@ class PiPlaneMonitorService:
         if self.oled_service:
             self.oled_service.remove_aircraft(removed_hex_codes)
 
-        # Visualization service doesn't need explicit cleanup as it works with aircraft_history reference
+        if self.visualization_service:
+            self.visualization_service.remove_aircraft(removed_hex_codes)
 
     def start_monitoring(self, interval=1):
         """
@@ -332,7 +335,6 @@ class PiPlaneMonitorService:
                 while self.running and not self.exit_requested:
                     time.sleep(1)
             except KeyboardInterrupt:
-                print("\n👋 Monitoring stopped by user")
                 self.running = False
                 self.exit_requested = True
 
