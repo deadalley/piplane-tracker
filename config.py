@@ -16,12 +16,10 @@ Key Features:
 - Comprehensive error handling and validation
 
 Configuration Categories:
-- Data Source: File paths, update intervals, timeouts
-- Display Settings: LCD/OLED enable/disable, update rates
+- Data Source: File paths for aircraft data
+- Display Settings: LCD/OLED enable/disable
 - OLED Hardware: Dimensions, I2C address settings
-- Alert System: Enable/disable, filtering, timeouts
-- Logging: File paths, levels, enable/disable
-- API Enhancement: OpenSky Network integration settings
+- Sound Alert System: Audio notification settings
 
 Usage:
     # Get global configuration instance
@@ -251,29 +249,6 @@ class PiPlaneTrackerConfig:
         """
         return self._get_str("data_source_file_path")
 
-    def get_data_source_update_interval(self) -> int:
-        """
-        Get data source update interval in seconds.
-
-        Controls how frequently the system checks for new aircraft data.
-        Lower values provide more real-time updates but use more CPU.
-
-        Returns:
-            int: Update interval in seconds (default: 5)
-        """
-        return self._get_int("data_source_update_interval", 5)
-
-    def get_data_source_timeout(self) -> int:
-        """
-        Get data source timeout in seconds.
-
-        Maximum time to wait when reading the data source file.
-
-        Returns:
-            int: Timeout in seconds (default: 10)
-        """
-        return self._get_int("data_source_timeout", 10)
-
     # === DISPLAY CONFIGURATION METHODS ===
 
     def is_lcd_enabled(self) -> bool:
@@ -293,17 +268,6 @@ class PiPlaneTrackerConfig:
             bool: True if OLED display should be used (default: True)
         """
         return self._get_bool("display_oled_enabled", True)
-
-    def get_lcd_update_interval(self) -> int:
-        """
-        Get LCD update interval in seconds.
-
-        Controls how frequently the LCD display is refreshed with new information.
-
-        Returns:
-            int: LCD update interval in seconds (default: 5)
-        """
-        return self._get_int("lcd_update_interval", 5)
 
     # === OLED CONFIGURATION METHODS ===
 
@@ -336,36 +300,7 @@ class PiPlaneTrackerConfig:
         """
         return self._get_int("oled_i2c_address", 60)
 
-    def get_oled_update_interval(self) -> int:
-        """
-        Get OLED update interval in seconds.
-
-        Controls how frequently the OLED display is refreshed with new information.
-
-        Returns:
-            int: OLED update interval in seconds (default: 3)
-        """
-        return self._get_int("oled_update_interval", 3)
-
     # === SOUND ALERT CONFIGURATION METHODS ===
-
-    def are_sound_alerts_enabled(self) -> bool:
-        """
-        Check if sound alerts are enabled.
-
-        Returns:
-            bool: True if sound alerts should be played (default: True)
-        """
-        return self._get_bool("sound_alerts_enabled", True)
-
-    def get_sound_alert_type(self) -> str:
-        """
-        Get sound alert type.
-
-        Returns:
-            str: Alert type - "beep", "file", or "speech" (default: "beep")
-        """
-        return self._get_str("sound_alert_type", "beep")
 
     def get_sound_alert_volume(self) -> int:
         """
@@ -395,71 +330,6 @@ class PiPlaneTrackerConfig:
             str: Path to audio file (default: empty string)
         """
         return self._get_str("sound_alert_audio_file", "")
-
-    # === LOGGING CONFIGURATION METHODS ===
-
-    def is_logging_enabled(self) -> bool:
-        """
-        Check if logging is enabled.
-
-        Returns:
-            bool: True if logging should be enabled (default: False)
-        """
-        return self._get_bool("logging_enabled", False)
-
-    def get_log_file_path(self) -> str:
-        """
-        Get log file path.
-
-        Returns:
-            str: Path to log file (default: "aircraft_log.txt")
-        """
-        return self._get_str("logging_file_path", "aircraft_log.txt")
-
-    def get_log_level(self) -> str:
-        """
-        Get logging level.
-
-        Returns:
-            str: Logging level (default: "INFO")
-        """
-        return self._get_str("logging_level", "INFO")
-
-    # === API ENHANCEMENT CONFIGURATION METHODS ===
-
-    def is_enhancement_enabled(self) -> bool:
-        """
-        Check if flight enhancement via APIs is enabled.
-
-        When enabled, additional aircraft information is fetched from
-        external APIs like OpenSky Network.
-
-        Returns:
-            bool: True if API enhancement is enabled (default: False)
-        """
-        return self._get_bool("enhancement_enabled", False)
-
-    def get_enhancement_cache_timeout(self) -> int:
-        """
-        Get enhancement cache timeout in seconds.
-
-        How long to cache API enhancement data before refetching.
-
-        Returns:
-            int: Cache timeout in seconds (default: 300 = 5 minutes)
-        """
-        return self._get_int("enhancement_cache_timeout", 300)
-
-    def get_enhancement_api_rate_limit(self) -> int:
-        """
-        Get enhancement API rate limit in seconds.
-
-        Minimum time between API calls to respect rate limits.
-
-        Returns:
-            int: Rate limit in seconds (default: 1)
-        """
-        return self._get_int("enhancement_api_rate_limit", 1)
 
 
 # === GLOBAL CONFIGURATION MANAGEMENT ===

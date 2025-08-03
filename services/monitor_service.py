@@ -10,7 +10,6 @@ from typing import Dict, List, Optional
 import threading
 import json
 import os
-from config import get_config
 from .display_services import (
     ConsoleDisplayService,
     LCDDisplayService,
