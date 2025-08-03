@@ -10,7 +10,7 @@
   [![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-red.svg)](https://www.raspberrypi.org/)
   [![ADS-B](https://img.shields.io/badge/ADS--B-dump1090--fa-orange.svg)](https://github.com/flightaware/dump1090)
   
-  Track aircraft in real-time using ADS-B data with LCD/OLED display support.
+  Track aircraft in real-time using ADS-B data with LCD/OLED display support. Get a notified every time a new aircraft flights over your region.
   
   [Installation](#installation) • [Hardware](#hardware) • [Usage](#usage) • [Contributing](#contributing)
 </div>
@@ -29,11 +29,6 @@
         🖥️
         <br><strong>Multi-Display Support</strong>
         <br>LCD (16x2) and OLED (128x32) display compatibility
-      </td>
-      <td align="center">
-        📈
-        <br><strong>Enhanced Data</strong>
-        <br>OpenSky Network API integration for enriched information
       </td>
       <td align="center">
         🔊
@@ -74,7 +69,7 @@
 
 2. **Install Python dependencies**
    ```bash
-   pip3 install -r requirements
+   pip install -r requirements
    ```
 
 3. **Set up dump1090-fa** (if not already installed)
