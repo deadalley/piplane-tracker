@@ -269,6 +269,8 @@ class PiPlaneMonitorService:
 
         self.console_service.remove_aircraft(removed_hex_codes)
 
+        self.visualization_service.remove_aircraft(removed_hex_codes)
+
         if self.lcd_service:
             self.lcd_service.remove_aircraft(removed_hex_codes)
 

@@ -12,6 +12,10 @@ import select
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set
 
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from common.get_country_from_icao import get_country_from_icao
+from common.get_country_flag import get_country_flag
+
 
 class PiPlaneVisualizationService:
     """
@@ -101,10 +105,16 @@ class PiPlaneVisualizationService:
             flight = info.get("flight", "Unknown")
             last_seen = info["last_seen"].strftime("%H:%M:%S")
 
+            # Get country flag
+            country = get_country_from_icao(hex_code)
+            country_flag = get_country_flag(country)
+
             # New aircraft indicator
             new_indicator = " [NEW]" if self._is_aircraft_new(hex_code) else ""
 
-            print(f"{i+1:2d}. {flight:<12}{new_indicator:<6} | {last_seen}")
+            print(
+                f"{i+1:2d}. {country_flag} ({hex_code}) {flight:<12}{new_indicator:<6} | {last_seen}"
+            )
 
         if len(aircraft_list) > 15:
             print(f"... and {len(aircraft_list) - 15} more aircraft")
@@ -135,8 +145,14 @@ class PiPlaneVisualizationService:
 
         # Basic information
         flight = info.get("flight", "Unknown")
+
+        # Get country information
+        country = get_country_from_icao(hex_code)
+        country_flag = get_country_flag(country)
+
         print(f"✈️  Flight: {flight}")
         print(f"🔖 ICAO Code: {hex_code}")
+        print(f"🏁 Country: {country_flag} {country}")
 
         # Timing information
         first_seen = info["first_seen"].strftime("%Y-%m-%d %H:%M:%S")
