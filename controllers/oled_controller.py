@@ -26,6 +26,7 @@ from config import get_config
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from common.get_country_from_icao import get_country_from_icao
+from common.get_country_name import get_country_name
 
 
 class PiPlaneOLEDController:
@@ -180,7 +181,8 @@ class PiPlaneOLEDController:
         hex_code = aircraft.get("hex", "")
         altitude = aircraft.get("alt_baro") or aircraft.get("alt_geom")
         speed = aircraft.get("gs")
-        country = get_country_from_icao(hex_code)
+        country_code = get_country_from_icao(hex_code)
+        country = get_country_name(country_code)
 
         # Line 1: Flight/Callsign or ICAO
         if flight:
