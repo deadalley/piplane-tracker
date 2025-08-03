@@ -138,34 +138,6 @@ class PiPlaneOLEDController:
         self.display.show()
         time.sleep(interval)
 
-    def display_aircraft_count(self, total_count, new_count=0):
-        """
-        Display aircraft count summary
-
-        Args:
-            total_count (int): Total aircraft detected
-            new_count (int): New aircraft count
-        """
-        if not self.show_display():
-            return
-
-        # Title
-        self.draw_text("AIRCRAFT TRACKER", 0, 0, self.font_small)
-
-        # Aircraft count
-        self.draw_text(f"Total: {total_count}", 0, 10, self.font_medium)
-
-        # New aircraft (if any)
-        if new_count > 0:
-            self.draw_text(f"NEW: {new_count}!", 70, 10, self.font_medium)
-
-        # Time
-        time_str = datetime.now().strftime("%H:%M:%S")
-        self.draw_text(f"Time: {time_str}", 0, 22, self.font_small)
-
-        self.display.image(self.image)
-        self.display.show()
-
     def display_aircraft_info(self, aircraft, interval=2):
         """
         Display individual aircraft information

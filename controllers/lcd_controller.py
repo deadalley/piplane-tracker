@@ -60,22 +60,6 @@ class PiPlaneLCDController:
         self.display_text("New aircraft", "detected!")
         time.sleep(interval)
 
-    def display_aircraft_count(self, total_count, new_count=0):
-        """
-        Display aircraft count
-
-        Args:
-            total_count (int): Total aircraft detected
-            new_count (int): New aircraft count (optional)
-        """
-        line1 = f"Aircrafts: {total_count}"
-        line2 = (
-            f"New: {new_count}"
-            if new_count > 0
-            else f"Time: {datetime.now().strftime('%H:%M')}"
-        )
-        self.display_text(line1, line2)
-
     def display_aircraft_info(self, aircraft, interval=2):
         """
         Display individual aircraft information
