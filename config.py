@@ -18,7 +18,8 @@ Key Features:
 Configuration Categories:
 - Data Source: File paths for aircraft data
 - Display Settings: LCD/OLED enable/disable
-- OLED Hardware: Dimensions, I2C address settings
+- LCD Hardware: Update interval settings
+- OLED Hardware: Dimensions, I2C address, update interval settings
 - Sound Alert System: Audio notification settings
 - HexDB.io API: HexDB API configuration
 - Enhancement System: Aircraft data enhancement settings
@@ -262,6 +263,15 @@ class PiPlaneTrackerConfig:
         """
         return self._get_bool("display_lcd_enabled", True)
 
+    def get_lcd_update_interval(self) -> int:
+        """
+        Get LCD display update interval in seconds.
+
+        Returns:
+            int: Update interval in seconds (default: 5)
+        """
+        return self._get_int("lcd_update_interval", 5)
+
     def is_oled_enabled(self) -> bool:
         """
         Check if OLED display is enabled.
@@ -301,6 +311,15 @@ class PiPlaneTrackerConfig:
             int: I2C address for OLED display (default: 60)
         """
         return self._get_int("oled_i2c_address", 60)
+
+    def get_oled_update_interval(self) -> int:
+        """
+        Get OLED display update interval in seconds.
+
+        Returns:
+            int: Update interval in seconds (default: 3)
+        """
+        return self._get_int("oled_update_interval", 3)
 
     # === VISUALIZATION CONFIGURATION METHODS ===
 

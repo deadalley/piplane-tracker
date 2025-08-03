@@ -10,6 +10,12 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Set
 from datetime import datetime
 
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from config import get_config
+
 
 class BaseDisplayService(ABC):
     """Base class for all display services"""
@@ -116,11 +122,17 @@ class LCDDisplayService(BaseDisplayService):
         self.lcd_controller = lcd_controller
         self._last_state = "idle"  # Track current display state
 
+        # Get update interval from configuration
+        config = get_config()
+        self.update_interval = config.get_lcd_update_interval()
+
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on LCD"""
         if self.lcd_controller:
             self.lcd_controller.display_new_aircraft_detected(interval=2)
-            self.lcd_controller.display_aircraft_info(aircraft=aircraft, interval=5)
+            self.lcd_controller.display_aircraft_info(
+                aircraft=aircraft, interval=self.update_interval
+            )
             self._last_state = "aircraft"
 
     def _show_idle_message(self):
@@ -138,11 +150,17 @@ class OLEDDisplayService(BaseDisplayService):
         self.oled_controller = oled_controller
         self._last_state = "idle"  # Track current display state
 
+        # Get update interval from configuration
+        config = get_config()
+        self.update_interval = config.get_oled_update_interval()
+
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on OLED"""
         if self.oled_controller:
             self.oled_controller.display_new_aircraft_detected(interval=2)
-            self.oled_controller.display_aircraft_info(aircraft=aircraft, interval=5)
+            self.oled_controller.display_aircraft_info(
+                aircraft=aircraft, interval=self.update_interval
+            )
             self._last_state = "aircraft"
 
     def _show_idle_message(self):
