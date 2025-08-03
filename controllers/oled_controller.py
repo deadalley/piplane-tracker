@@ -157,27 +157,36 @@ class PiPlaneOLEDController:
         country = get_country_name(country_code)
         aircraft_type = aircraft.get("aircraft_type")
 
-        # Line 1: Flight/Callsign or ICAO
+        # Line 1: Flight/Callsign or ICAO with Aircraft Type aligned right
         if flight:
-            self.draw_text(f"✈ {flight}", 0, 0, self.font_medium)
+            flight_text = f"✈ {flight}"
+            self.draw_text(flight_text, 0, 0, self.font_medium)
         else:
-            self.draw_text(f"✈ {hex_code[:8]}", 0, 0, self.font_small)
+            hex_text = f"✈ {hex_code[:8]}"
+            self.draw_text(hex_text, 0, 0, self.font_small)
 
-        # Line 2: Country
-        country_text = f"{country}" if country else ""
-        self.draw_text(f"Country: {country_text}", 0, 11, self.font_small)
+        # Add aircraft type aligned to the right on the same line
+        if aircraft_type:
+            aircraft_type_short = aircraft_type[:6]  # Limit to 6 chars to fit
+            # Calculate approximate x position for right alignment (128px width)
+            type_x_pos = (
+                128 - len(aircraft_type_short) * 6
+            )  # Approximate 6px per character
+            self.draw_text(aircraft_type_short, type_x_pos, 0, self.font_small)
+
+        # Line 2: Country only
+        country_text = f"{country[:18]}" if country else "Unknown"
+        self.draw_text(country_text, 0, 11, self.font_small)
 
         # Line 3: Altitude and Speed
         alt_text = f"{altitude}ft" if altitude else "N/A"
         speed_text = f"{speed}kt" if speed else "N/A"
 
-        self.draw_text(f"Alt: {alt_text}", 0, 22, self.font_small)
-        self.draw_text(f"Spd: {speed_text}", 64, 22, self.font_small)
+        self.draw_text(f"{alt_text}", 0, 22, self.font_small)
 
-        # Line 3: Aircraft Type and Registration
-        print(aircraft_type)
-        if aircraft_type:
-            self.draw_text(f"Aircraft: {aircraft_type}", 0, 33, self.font_small)
+        # Calculate approximate x position for right alignment (128px width)
+        speed_x_pos = 128 - len(speed_text) * 6  # Approximate 6px per character
+        self.draw_text(f"{speed_text}", speed_x_pos, 22, self.font_small)
 
         self.display.image(self.image)
         self.display.show()

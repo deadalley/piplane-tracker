@@ -277,12 +277,26 @@ class PiPlaneMonitorService:
             if not hex_code:
                 continue
 
+            # Get enhanced aircraft data from history (includes HexDB data)
+            enhanced_aircraft = aircraft.copy()
+            if hex_code in self.aircraft_history:
+                history_entry = self.aircraft_history[hex_code]
+                # Merge HexDB enhanced fields into aircraft data
+                enhanced_aircraft.update(
+                    {
+                        "aircraft_type": history_entry.get("aircraft_type"),
+                        "manufacturer": history_entry.get("manufacturer"),
+                        "registration": history_entry.get("registration"),
+                        "operator": history_entry.get("operator"),
+                    }
+                )
+
             # Add to all active display services
             if self.lcd_service:
-                self.lcd_service.add_aircraft(aircraft)
+                self.lcd_service.add_aircraft(enhanced_aircraft)
 
             if self.oled_service:
-                self.oled_service.add_aircraft(aircraft)
+                self.oled_service.add_aircraft(enhanced_aircraft)
 
     def _cleanup_queues_for_removed_aircraft(self, removed_hex_codes: set):
         """Remove aircraft from all display service queues when they're removed from history"""
