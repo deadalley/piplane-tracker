@@ -165,6 +165,9 @@ class PiPlaneVisualizationService:
         duration_str = str(duration).split(".")[0]  # Remove microseconds
         print(f"⏱️ Tracked for: {duration_str}")
 
+        # Position information
+        positions = info.get("positions", [])
+
         # Show recent positions if available
         if len(positions) > 1:
             print("\n📊 Recent Position History:")

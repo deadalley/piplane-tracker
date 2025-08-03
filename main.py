@@ -6,7 +6,7 @@ A comprehensive aircraft tracking system for Raspberry Pi that monitors ADS-B da
 in real-time and displays information on LCD/OLED screens.
 
 This module provides:
-- Interactive menu system for user navigation
+- Direct aircraft monitoring startup
 - Display controller initialization and management
 - Data source validation and connection testing
 - Graceful shutdown handling and cleanup
@@ -60,44 +60,6 @@ def signal_handler(sig, frame):
     """
     print("\nShutting down PiPlane Tracker...")
     sys.exit(0)
-
-
-def show_menu():
-    """
-    Display the main interactive menu.
-
-    Shows available options:
-    - [M] Monitor: Start real-time aircraft monitoring
-    - [Q] Quit: Exit the application
-
-    The menu includes visual formatting with emojis and clear instructions
-    for keyboard navigation during monitoring mode.
-    """
-    print("\n" + "=" * 60)
-    print("🛩️  PiPlane Tracker v1.0")
-    print("=" * 60)
-    print()
-    print("  [M] Monitor - Interactive real-time aircraft monitoring")
-    print("  [Q] Quit - Exit the application")
-    print()
-    print("=" * 60)
-
-
-def get_user_choice():
-    """
-    Get and validate user menu choice.
-
-    Prompts the user for input and validates that it's one of the
-    acceptable options (M, Q). Loops until valid input is provided.
-
-    Returns:
-        str: Validated user choice ('M' or 'Q')
-    """
-    while True:
-        choice = input(">>> ").strip().upper()
-        if choice in ["M", "Q"]:
-            return choice
-        print("Invalid choice.")
 
 
 def initialize_displays():
@@ -184,10 +146,10 @@ def test_data_connection():
 
 def main():
     """
-    Main application entry point with interactive menu system.
+    Main application entry point for direct aircraft monitoring.
 
     This is the central controller for the PiPlane Tracker application.
-    It orchestrates all major components and provides the user interface.
+    It orchestrates all major components and starts monitoring immediately.
 
     Application flow:
     1. Display startup banner and system information
@@ -197,24 +159,18 @@ def main():
     5. Test data source connectivity
     6. Initialize display hardware
     7. Set up monitoring service
-    8. Run interactive menu loop
-    9. Handle user choices and execute corresponding actions
-    10. Perform cleanup on exit
+    8. Start aircraft monitoring directly
+    9. Handle shutdown and cleanup
 
     Features handled:
     - Configuration loading and validation
     - Hardware initialization with fallback
     - Real-time aircraft monitoring
     - Aircraft history management
-    - Interactive menu navigation
     - Graceful shutdown and cleanup
 
     Command line options:
     - --help, -h: Display help information and exit
-
-    Interactive menu options:
-    - M: Start real-time monitoring mode
-    - Q: Quit the application
 
     The function handles all exceptions gracefully and ensures proper
     cleanup of resources before termination.
@@ -234,9 +190,10 @@ def main():
         print("\nConfiguration:")
         print("  - Edit the 'config' file to change default settings")
         print("  - Data source, display options, and more can be configured")
-        print("\nInteractive Mode:")
-        print("  - Choose between listing known aircraft or monitoring")
-        print("  - Press ESC during monitoring to return to menu")
+        print("\nOperation:")
+        print("  - The application starts monitoring immediately")
+        print("  - Press Ctrl+C to stop monitoring and exit")
+        print("  - Interactive console available if visualization is enabled")
         return
 
     # Register signal handler for graceful shutdown
@@ -253,7 +210,7 @@ def main():
     print("\n🔧 Initializing displays...")
     lcd_controller, oled_controller = initialize_displays()
 
-    # Initialize monitor system
+        # Initialize monitor system
     try:
         monitor = PiPlaneMonitorService(
             lcd_controller=lcd_controller,
@@ -266,29 +223,14 @@ def main():
         monitor = None
         return
 
-    # Main interactive loop
+    # Start monitoring directly
     try:
-        while True:
-            show_menu()
-            choice = get_user_choice()
+        print("-" * 60)
+        print("🔍 Starting aircraft monitoring...")
+        print("Press Ctrl+C to quit")
+        print("-" * 60)
 
-            if choice == "M":
-                print("-" * 60)
-                print("🔍 Starting interactive aircraft monitoring...")
-                print(
-                    "Enter aircraft number for details, 'q' to quit, Enter to refresh"
-                )
-                print("-" * 60)
-
-                exit_requested = monitor.start_monitoring(interval=5)
-
-                if not exit_requested:
-                    # If we get here, it was likely a Ctrl+C
-                    break
-
-            elif choice == "Q":
-                print("Shutting down PiPlane Tracker...")
-                break
+        monitor.start_monitoring(interval=5)
 
     except KeyboardInterrupt:
         print("\n\n🛑 PiPlane Tracker interrupted by user")
