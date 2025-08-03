@@ -59,7 +59,8 @@ class PiPlaneVisualizationService:
     def _get_sorted_aircraft_list(self) -> List[tuple]:
         """Get sorted list of aircraft (hex_code, info) tuples"""
         return sorted(
-            self.aircraft_history.items(), key=lambda x: x[1]["last_seen"], reverse=True
+            self.aircraft_history.items(),
+            key=lambda x: (-int(x[1]["last_seen"].timestamp()), x[0]),
         )
 
     def _is_aircraft_new(self, hex_code: str) -> bool:
@@ -113,7 +114,7 @@ class PiPlaneVisualizationService:
             new_indicator = " [NEW]" if self._is_aircraft_new(hex_code) else ""
 
             print(
-                f"{i+1:2d}. {country_flag} ({hex_code}) {flight:<12}{new_indicator:<6} | {last_seen}"
+                f"{i+1:2d}. {country_flag} ({hex_code.upper()}) {flight:<12}{new_indicator:<6} | {last_seen}"
             )
 
         if len(aircraft_list) > 15:
@@ -150,37 +151,19 @@ class PiPlaneVisualizationService:
         country = get_country_from_icao(hex_code)
         country_flag = get_country_flag(country)
 
-        print(f"✈️  Flight: {flight}")
-        print(f"🔖 ICAO Code: {hex_code}")
-        print(f"🏁 Country: {country_flag} {country}")
+        print(f"✈️ {flight} ({country}) {country_flag}")
+        print(f"🔖 ICAO Code: {hex_code.upper()}")
 
         # Timing information
         first_seen = info["first_seen"].strftime("%Y-%m-%d %H:%M:%S")
         last_seen = info["last_seen"].strftime("%Y-%m-%d %H:%M:%S")
-        print(f"🕐 First Seen: {first_seen}")
-        print(f"🕐 Last Seen: {last_seen}")
+        print(f"🕐 First seen: {first_seen}")
+        print(f"🕐 Last seen: {last_seen}")
 
         # Calculate tracking duration
         duration = info["last_seen"] - info["first_seen"]
         duration_str = str(duration).split(".")[0]  # Remove microseconds
-        print(f"⏱️  Tracked For: {duration_str}")
-
-        # Position information
-        positions = info.get("positions", [])
-        print(f"📍 Position Reports: {len(positions)}")
-
-        if positions:
-            latest_pos = positions[-1]
-            print(
-                f"   Latest Position: {latest_pos['lat']:.6f}, {latest_pos['lon']:.6f}"
-            )
-            print(f"   Position Time: {latest_pos['timestamp'].strftime('%H:%M:%S')}")
-
-            if len(positions) > 1:
-                first_pos = positions[0]
-                print(
-                    f"   First Position: {first_pos['lat']:.6f}, {first_pos['lon']:.6f}"
-                )
+        print(f"⏱️ Tracked for: {duration_str}")
 
         # Show recent positions if available
         if len(positions) > 1:
@@ -192,7 +175,7 @@ class PiPlaneVisualizationService:
 
         print()
         print("-" * 60)
-        print("Press Enter to go back to aircraft list")
+        print("[ENTER] Return to aircraft list")
         print(">>> ", end="", flush=True)
 
     def _has_input_available(self) -> bool:
