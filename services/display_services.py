@@ -108,17 +108,6 @@ class BaseDisplayService(ABC):
         pass
 
 
-class ConsoleDisplayService(BaseDisplayService):
-    """Console display service for printing aircraft to console"""
-
-    def __init__(self):
-        super().__init__("Console")
-
-    def _process_aircraft(self, aircraft: dict):
-        """Print aircraft information to console"""
-        pass  # Handled by the VisualizationService
-
-
 class LCDDisplayService(BaseDisplayService):
     """LCD display service for showing aircraft on LCD screen"""
 

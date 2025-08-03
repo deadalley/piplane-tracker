@@ -300,6 +300,17 @@ class PiPlaneTrackerConfig:
         """
         return self._get_int("oled_i2c_address", 60)
 
+    # === VISUALIZATION CONFIGURATION METHODS ===
+
+    def is_visualization_enabled(self) -> bool:
+        """
+        Check if interactive console visualization is enabled.
+
+        Returns:
+            bool: True if interactive visualization should be used (default: True)
+        """
+        return self._get_bool("display_visualization_enabled", True)
+
     # === SOUND ALERT CONFIGURATION METHODS ===
 
     def get_sound_alert_volume(self) -> int:

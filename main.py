@@ -256,9 +256,9 @@ def main():
     # Initialize monitor system
     try:
         monitor = PiPlaneMonitorService(
-            file_path=config.get_data_source_path(),
             lcd_controller=lcd_controller,
             oled_controller=oled_controller,
+            enable_visualization=config.is_visualization_enabled(),
         )
         print("✅ Monitor system initialized")
     except Exception as e:

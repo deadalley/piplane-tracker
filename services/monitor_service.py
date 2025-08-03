@@ -13,7 +13,6 @@ import os
 
 from config import get_config
 from .display_services import (
-    ConsoleDisplayService,
     LCDDisplayService,
     OLEDDisplayService,
 )
@@ -24,12 +23,9 @@ from .visualization_service import PiPlaneVisualizationService
 class PiPlaneMonitorService:
     def __init__(
         self,
-        file_path: str,
-        audio_file_path: Optional[str] = None,
-        alert_cooldown: float = 1.0,
-        volume: int = 70,
         lcd_controller=None,
         oled_controller=None,
+        enable_visualization: bool = True,
     ):
         """
         Initialize the monitor service
@@ -41,13 +37,18 @@ class PiPlaneMonitorService:
             volume (int): Audio volume (0-100)
             lcd_controller: LCD controller instance (optional)
             oled_controller: OLED controller instance (optional)
+            enable_visualization (bool): Whether to enable the interactive visualization service
         """
         self.aircraft_history: Dict[str, dict] = {}
         self.running = False
+        self.enable_visualization = enable_visualization
+
+        config = get_config()
+
+        # Set up data source path
+        self.file_path = config.get_data_source_path()
 
         # Initialize display services
-        self.console_service = ConsoleDisplayService()
-
         self.lcd_service = None
         if lcd_controller:
             self.lcd_service = LCDDisplayService(lcd_controller)
@@ -56,12 +57,13 @@ class PiPlaneMonitorService:
         if oled_controller:
             self.oled_service = OLEDDisplayService(oled_controller)
 
-        # Initialize visualization service for interactive console
-        self.visualization_service = PiPlaneVisualizationService()
+        # Initialize visualization service for interactive console (optional)
+        self.visualization_service = None
+        if enable_visualization:
+            self.visualization_service = PiPlaneVisualizationService()
 
         # Initalize sound alert service
         try:
-            config = get_config()
             self.sound_alert_service = PiPlaneSoundAlertService(
                 audio_file_path=config.get_sound_alert_audio_file(),
                 alert_cooldown=config.get_sound_alert_cooldown(),
@@ -73,26 +75,21 @@ class PiPlaneMonitorService:
             self.sound_alert_service = None
 
         # Set aircraft history reference for all services
-        self.console_service.aircraft_history = self.aircraft_history
         if self.lcd_service:
             self.lcd_service.aircraft_history = self.aircraft_history
         if self.oled_service:
             self.oled_service.aircraft_history = self.aircraft_history
-        self.visualization_service.update_aircraft_history(self.aircraft_history)
+        if self.visualization_service:
+            self.visualization_service.update_aircraft_history(self.aircraft_history)
 
         # Keyboard input handling
         self.exit_requested = False
-
-        # Set up data source path
-        self.file_path = file_path
 
         # Start display services
         self._start_display_services()
 
     def _start_display_services(self):
         """Start all display services"""
-        self.console_service.start()
-
         if self.lcd_service:
             self.lcd_service.start()
 
@@ -254,8 +251,6 @@ class PiPlaneMonitorService:
                 continue
 
             # Add to all active display services
-            self.console_service.add_aircraft(aircraft)
-
             if self.lcd_service:
                 self.lcd_service.add_aircraft(aircraft)
 
@@ -267,15 +262,13 @@ class PiPlaneMonitorService:
         if not removed_hex_codes:
             return
 
-        self.console_service.remove_aircraft(removed_hex_codes)
-
-        self.visualization_service.remove_aircraft(removed_hex_codes)
-
         if self.lcd_service:
             self.lcd_service.remove_aircraft(removed_hex_codes)
 
         if self.oled_service:
             self.oled_service.remove_aircraft(removed_hex_codes)
+
+        # Visualization service doesn't need explicit cleanup as it works with aircraft_history reference
 
     def start_monitoring(self, interval=1):
         """
@@ -309,11 +302,14 @@ class PiPlaneMonitorService:
 
                     # Log new aircraft detections
                     if len(new_aircrafts) > 0:
-                        # Mark new aircraft in visualization service
-                        for aircraft in new_aircrafts:
-                            hex_code = aircraft.get("hex")
-                            if hex_code:
-                                self.visualization_service.add_new_aircraft(hex_code)
+                        # Mark new aircraft in visualization service if enabled
+                        if self.visualization_service:
+                            for aircraft in new_aircrafts:
+                                hex_code = aircraft.get("hex")
+                                if hex_code:
+                                    self.visualization_service.add_new_aircraft(
+                                        hex_code
+                                    )
 
                         # Trigger sound alert for new aircraft
                         if self.sound_alert_service:
@@ -324,12 +320,21 @@ class PiPlaneMonitorService:
         monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
         monitor_thread.start()
 
-        # Start the visualization service (this will block until user quits)
-        self.visualization_service.start()
-
-        # When visualization stops, stop monitoring
-        self.running = False
-        self.exit_requested = True
+        # Start the visualization service if enabled (this will block until user quits)
+        if self.visualization_service:
+            self.visualization_service.start()
+            # When visualization stops, stop monitoring
+            self.running = False
+            self.exit_requested = True
+        else:
+            # If no visualization service, just wait for the monitor thread
+            try:
+                while self.running and not self.exit_requested:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\n👋 Monitoring stopped by user")
+                self.running = False
+                self.exit_requested = True
 
         return self.exit_requested
 
@@ -346,18 +351,18 @@ class PiPlaneMonitorService:
 
     def _stop_display_services(self):
         """Stop all display services"""
-        self.console_service.stop()
-
         if self.lcd_service:
             self.lcd_service.stop()
 
         if self.oled_service:
             self.oled_service.stop()
 
-        # Stop visualization service
-        self.visualization_service.stop()
+        # Stop visualization service if enabled
+        if self.visualization_service:
+            self.visualization_service.stop()
 
     def cleanup(self):
         """Cleanup all services"""
         self.stop_monitoring()
-        self.visualization_service.cleanup()
+        if self.visualization_service:
+            self.visualization_service.cleanup()
