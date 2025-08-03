@@ -115,6 +115,7 @@ class PiPlaneVisualizationService:
             # Format additional aircraft data
             altitude = info.get("altitude")
             speed = info.get("speed")
+            aircraft_type = info.get("aircraft_type", "")
 
             # Format altitude (feet)
             alt_str = f"{altitude:,}ft" if altitude is not None else "N/A"
@@ -122,8 +123,11 @@ class PiPlaneVisualizationService:
             # Format speed (knots)
             speed_str = f"{speed}kt" if speed is not None else "N/A"
 
+            # Format aircraft type (truncate if too long)
+            type_str = f" ({aircraft_type[:8]})" if aircraft_type else ""
+
             print(
-                f"{i+1:2d}. {country_flag} {flight:<10}{new_indicator:<6} | {alt_str:<8} | {speed_str:<6} | {last_seen}"
+                f"{i+1:2d}. {country_flag} {flight:<10}{new_indicator:<6}{type_str:<10} | {alt_str:<8} | {speed_str:<6} | {last_seen}"
             )
 
         if len(aircraft_list) > 15:
@@ -166,11 +170,17 @@ class PiPlaneVisualizationService:
         # Flight data information
         altitude = info.get("altitude")
         speed = info.get("speed")
-        aircraft_type = info.get("aircraft_type", "")  # TODO: implement
+        aircraft_type = info.get("aircraft_type", "")
+        manufacturer = info.get("manufacturer", "")
+        registration = info.get("registration", "")
+        operator = info.get("operator", "")
 
         print(f"📏 Altitude: {f'{altitude:,} ft' if altitude is not None else 'N/A'}")
         print(f"🏃 Speed: {f'{speed} knots' if speed is not None else 'N/A'}")
         print(f"✈️ Aircraft Type: {aircraft_type if aircraft_type else 'N/A'}")
+        print(f"🏭 Manufacturer: {manufacturer if manufacturer else 'N/A'}")
+        print(f"🏷️ Registration: {registration if registration else 'N/A'}")
+        print(f"🏢 Operator: {operator if operator else 'N/A'}")
 
         # Timing information
         first_seen = info["first_seen"].strftime("%Y-%m-%d %H:%M:%S")

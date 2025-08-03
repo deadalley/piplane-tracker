@@ -11,6 +11,7 @@ import threading
 import json
 import os
 
+from apis.hexdb_api import enhance_aircraft_data, get_hexdb_api
 from config import get_config
 from .display_services import (
     LCDDisplayService,
@@ -44,6 +45,15 @@ class PiPlaneMonitorService:
         self.enable_visualization = enable_visualization
 
         config = get_config()
+
+        self.is_hexdb_enabled = config.is_hexdb_enabled()
+
+        # Initialize HexDB API with configuration values if enabled
+        if self.is_hexdb_enabled:
+            get_hexdb_api(
+                rate_limit=config.get_hexdb_rate_limit(),
+                cache_timeout=config.get_hexdb_cache_timeout(),
+            )
 
         # Set up data source path
         self.file_path = config.get_data_source_path()
@@ -157,13 +167,27 @@ class PiPlaneMonitorService:
         if not hex_code:
             return
 
+        # Enhance aircraft data with HexDB if enabled
+        enhanced_aircraft = aircraft
+        if self.is_hexdb_enabled:
+            enhanced_aircraft = enhance_aircraft_data(aircraft)
+            if enhanced_aircraft != aircraft:
+                print(
+                    f"✅ Enhanced data for {hex_code}: {enhanced_aircraft.get('aircraft_type', 'N/A')} - {enhanced_aircraft.get('registration', 'N/A')}"
+                )
+
         self.aircraft_history[hex_code] = {
             "first_seen": datetime.now(),
             "last_seen": datetime.now(),
-            "flight": aircraft.get("flight", "").strip(),
-            "altitude": aircraft.get("alt_baro"),
-            "speed": aircraft.get("gs"),
+            "flight": enhanced_aircraft.get("flight", "").strip(),
+            "altitude": enhanced_aircraft.get("alt_baro"),
+            "speed": enhanced_aircraft.get("gs"),
             "positions": [],
+            # Add HexDB enhanced fields
+            "aircraft_type": enhanced_aircraft.get("aircraft_type"),
+            "manufacturer": enhanced_aircraft.get("manufacturer"),
+            "registration": enhanced_aircraft.get("registration"),
+            "operator": enhanced_aircraft.get("operator"),
         }
 
         if aircraft.get("lat") and aircraft.get("lon"):

@@ -7,9 +7,9 @@ data_source_update_interval=5
 data_source_timeout=10
 
 # Display Settings
-display_lcd_enabled=true
-display_oled_enabled=true
-display_visualization_enabled=false
+display_lcd_enabled=false
+display_oled_enabled=false
+display_visualization_enabled=true
 
 # LCD Configuration
 lcd_update_interval=5
@@ -38,6 +38,6 @@ enhancement_api_rate_limit=1
 
 # HexDB.io API Settings
 hexdb_enabled=false
-hexdb_rate_limit=1.0
-hexdb_cache_timeout=300
+hexdb_rate_limit=0.5
+hexdb_cache_timeout=600
 hexdb_timeout=10
