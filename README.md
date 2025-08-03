@@ -169,7 +169,19 @@ Expected output:
 
 ### Monitoring Mode
 
-When you select **Monitor**, the system will continuously scan for new aircrafts and display alerts with the available information for that aircraft when a new one is detected.
+When you select **Monitor**, the system will display an interactive aircraft list that updates in real-time:
+
+- **Navigation**: Enter the aircraft number (1, 2, 3, etc.) to view details
+- **Details View**: Shows comprehensive aircraft information including:
+  - Flight callsign and ICAO code
+  - First and last seen timestamps
+  - Duration tracked
+  - Position history and coordinates
+- **New Aircraft**: Newly detected aircraft show with a `[NEW]` tag
+- **Refresh**: Press Enter to refresh the list
+- **Exit**: Enter 'q' to quit monitoring mode
+
+The list automatically updates as new aircraft are detected and removes aircraft that haven't been seen for 5 minutes.
 
 ## Contributing
 

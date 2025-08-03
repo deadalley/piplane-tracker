@@ -10,30 +10,37 @@ from typing import Dict, List, Optional
 import threading
 import json
 import os
+
+from config import get_config
 from .display_services import (
     ConsoleDisplayService,
     LCDDisplayService,
     OLEDDisplayService,
 )
 from .sound_alert_service import PiPlaneSoundAlertService
+from .visualization_service import PiPlaneVisualizationService
 
 
 class PiPlaneMonitorService:
     def __init__(
         self,
         file_path: str,
-        sound_alert_service,
+        audio_file_path: Optional[str] = None,
+        alert_cooldown: float = 1.0,
+        volume: int = 70,
         lcd_controller=None,
         oled_controller=None,
     ):
         """
-        Initialize the alert system
+        Initialize the monitor service
 
         Args:
-            file_path (str, optional): Path to the aircraft.json file.
-                                     If None, uses path from configuration.
-            lcd_controller: LCD controller instance
-            oled_controller: OLED controller instance
+            file_path (str): Path to the aircraft.json file
+            audio_file_path (str, optional): Path to audio file for alerts
+            alert_cooldown (float): Minimum time between alerts in seconds
+            volume (int): Audio volume (0-100)
+            lcd_controller: LCD controller instance (optional)
+            oled_controller: OLED controller instance (optional)
         """
         self.aircraft_history: Dict[str, dict] = {}
         self.running = False
@@ -49,7 +56,21 @@ class PiPlaneMonitorService:
         if oled_controller:
             self.oled_service = OLEDDisplayService(oled_controller)
 
-        self.sound_alert_service = sound_alert_service
+        # Initialize visualization service for interactive console
+        self.visualization_service = PiPlaneVisualizationService()
+
+        # Initalize sound alert service
+        try:
+            config = get_config()
+            self.sound_alert_service = PiPlaneSoundAlertService(
+                audio_file_path=config.get_sound_alert_audio_file(),
+                alert_cooldown=config.get_sound_alert_cooldown(),
+                volume=config.get_sound_alert_volume(),
+            )
+            print("✅ Sound alert service initialized")
+        except Exception as e:
+            print(f"⚠️  Sound alert service initialization failed: {e}")
+            self.sound_alert_service = None
 
         # Set aircraft history reference for all services
         self.console_service.aircraft_history = self.aircraft_history
@@ -57,10 +78,7 @@ class PiPlaneMonitorService:
             self.lcd_service.aircraft_history = self.aircraft_history
         if self.oled_service:
             self.oled_service.aircraft_history = self.aircraft_history
-
-        # Display controllers (kept for compatibility)
-        self.lcd_controller = lcd_controller
-        self.oled_controller = oled_controller
+        self.visualization_service.update_aircraft_history(self.aircraft_history)
 
         # Keyboard input handling
         self.exit_requested = False
@@ -80,6 +98,8 @@ class PiPlaneMonitorService:
 
         if self.oled_service:
             self.oled_service.start()
+
+        # Visualization service will be started in main monitoring loop
 
     def _is_valid_aircraft(self, aircraft: dict) -> bool:
         """Check if the aircraft data is valid"""
@@ -127,9 +147,6 @@ class PiPlaneMonitorService:
                 aircraft_to_remove = self.aircraft_history[hex_code]
                 last_seen = aircraft_to_remove["last_seen"]
                 if (current_time - last_seen).total_seconds() > 300:  # 5 minutes
-                    # print(
-                    #     f"Removing old aircraft: {aircraft_to_remove['flight'] or hex_code}"
-                    # )
                     aircrafts_to_remove.append(hex_code)
 
         for hex_code in aircrafts_to_remove:
@@ -245,19 +262,6 @@ class PiPlaneMonitorService:
             if self.oled_service:
                 self.oled_service.add_aircraft(aircraft)
 
-    def _has_queued_aircraft(self) -> bool:
-        """Check if any of the display services have aircraft to process"""
-        if self.console_service.get_queue_length() > 0:
-            return True
-
-        if self.lcd_service and self.lcd_service.get_queue_length() > 0:
-            return True
-
-        if self.oled_service and self.oled_service.get_queue_length() > 0:
-            return True
-
-        return False
-
     def _cleanup_queues_for_removed_aircraft(self, removed_hex_codes: set):
         """Remove aircraft from all display service queues when they're removed from history"""
         if not removed_hex_codes:
@@ -270,14 +274,6 @@ class PiPlaneMonitorService:
 
         if self.oled_service:
             self.oled_service.remove_aircraft(removed_hex_codes)
-
-    def _print_to_console(self, aircraft: dict):
-        """Update console output"""
-
-        flight = aircraft.get("flight", "").strip()
-        alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
-        alt_str = f"{alt}ft" if alt else "N/A"
-        print(f"    {flight} - {alt_str}")
 
     def start_monitoring(self, interval=1):
         """
@@ -303,7 +299,7 @@ class PiPlaneMonitorService:
                         self._get_new_and_existing_aircrafts(aircraft_data)
                     )
 
-                    # Add new aicrafts, update position, and remove old aircrafts from history
+                    # Add new aircrafts, update position, and remove old aircrafts from history
                     self._update_aircraft_history(new_aircrafts, existing_aircrafts)
 
                     # Push new aircrafts to all display queues
@@ -311,25 +307,27 @@ class PiPlaneMonitorService:
 
                     # Log new aircraft detections
                     if len(new_aircrafts) > 0:
-                        timestamp = datetime.now().strftime("%H:%M:%S")
-                        print(
-                            f"[{timestamp}] New aircrafts detected [{len(new_aircrafts)}]:"
-                        )
+                        # Mark new aircraft in visualization service
+                        for aircraft in new_aircrafts:
+                            hex_code = aircraft.get("hex")
+                            if hex_code:
+                                self.visualization_service.add_new_aircraft(hex_code)
 
                         # Trigger sound alert for new aircraft
-                        self.sound_alert_service.play_aircraft_alert()
+                        if self.sound_alert_service:
+                            self.sound_alert_service.play_aircraft_alert()
 
                     time.sleep(interval)
 
         monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
         monitor_thread.start()
 
-        # Wait for exit signal
-        try:
-            while self.running and not self.exit_requested:
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            self.exit_requested = True
+        # Start the visualization service (this will block until user quits)
+        self.visualization_service.start()
+
+        # When visualization stops, stop monitoring
+        self.running = False
+        self.exit_requested = True
 
         return self.exit_requested
 
@@ -354,34 +352,10 @@ class PiPlaneMonitorService:
         if self.oled_service:
             self.oled_service.stop()
 
-    def list_known_aircraft(self):
-        """List all known aircraft in a formatted way"""
-        print("\n" + "=" * 60)
-        print("📋 KNOWN AIRCRAFT HISTORY")
-        print("=" * 60)
+        # Stop visualization service
+        self.visualization_service.stop()
 
-        if not self.aircraft_history:
-            print("No aircraft have been detected yet.")
-            return
-
-        print(f"Total aircraft tracked: {len(self.aircraft_history)}")
-        print()
-
-        # Sort by last seen time (most recent first)
-        sorted_aircraft = sorted(
-            self.aircraft_history.items(), key=lambda x: x[1]["last_seen"], reverse=True
-        )
-
-        for hex_code, info in sorted_aircraft:
-            flight = info.get("flight", "Unknown")
-            first_seen = info["first_seen"].strftime("%Y-%m-%d %H:%M:%S")
-            last_seen = info["last_seen"].strftime("%Y-%m-%d %H:%M:%S")
-            position_count = len(info.get("positions", []))
-
-            print(f"✈️  {flight} (ICAO: {hex_code})")
-            print(f"   First seen: {first_seen}")
-            print(f"   Last seen:  {last_seen}")
-            print(f"   Positions tracked: {position_count}")
-            print()
-
-        print("=" * 60)
+    def cleanup(self):
+        """Cleanup all services"""
+        self.stop_monitoring()
+        self.visualization_service.cleanup()

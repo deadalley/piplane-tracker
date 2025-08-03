@@ -28,7 +28,9 @@ import sys
 import signal
 import os
 
-from services.sound_alert_service import PiPlaneSoundAlertService
+from services.monitor_service import PiPlaneMonitorService
+from controllers.lcd_controller import PiPlaneLCDController
+from controllers.oled_controller import PiPlaneOLEDController
 
 try:
     import termios
@@ -65,7 +67,6 @@ def show_menu():
     Display the main interactive menu.
 
     Shows available options:
-    - [L] List: Display all tracked aircraft history
     - [M] Monitor: Start real-time aircraft monitoring
     - [Q] Quit: Exit the application
 
@@ -75,11 +76,10 @@ def show_menu():
     print("\n" + "=" * 60)
     print("🛩️  PiPlane Tracker v1.0")
     print("=" * 60)
-    print("  [L] List - Show all known aircraft history")
-    print("  [M] Monitor - Start real-time aircraft monitoring")
+    print()
+    print("  [M] Monitor - Interactive real-time aircraft monitoring")
     print("  [Q] Quit - Exit the application")
     print()
-    print("Press ESC anytime during monitoring to return to this menu")
     print("=" * 60)
 
 
@@ -88,16 +88,16 @@ def get_user_choice():
     Get and validate user menu choice.
 
     Prompts the user for input and validates that it's one of the
-    acceptable options (L, M, Q). Loops until valid input is provided.
+    acceptable options (M, Q). Loops until valid input is provided.
 
     Returns:
-        str: Validated user choice ('L', 'M', or 'Q')
+        str: Validated user choice ('M' or 'Q')
     """
     while True:
-        choice = input("\nEnter your choice (L/M/Q): ").strip().upper()
-        if choice in ["L", "M", "Q"]:
+        choice = input(">>> ").strip().upper()
+        if choice in ["M", "Q"]:
             return choice
-        print("Invalid choice. Please enter L, M, or Q.")
+        print("Invalid choice.")
 
 
 def initialize_displays():
@@ -213,7 +213,6 @@ def main():
     - --help, -h: Display help information and exit
 
     Interactive menu options:
-    - L: List all known aircraft history
     - M: Start real-time monitoring mode
     - Q: Quit the application
 
@@ -254,23 +253,10 @@ def main():
     print("\n🔧 Initializing displays...")
     lcd_controller, oled_controller = initialize_displays()
 
-    # Initalize sound alert service
-    try:
-        sound_alert_service = PiPlaneSoundAlertService(
-            audio_file_path=config.get_sound_alert_audio_file(),
-            alert_cooldown=config.get_sound_alert_cooldown(),
-            volume=config.get_sound_alert_volume(),
-        )
-        print("✅ Sound alert service initialized")
-    except Exception as e:
-        print(f"⚠️  Sound alert service initialization failed: {e}")
-        sound_alert_service = None
-
     # Initialize monitor system
     try:
         monitor = PiPlaneMonitorService(
             file_path=config.get_data_source_path(),
-            sound_alert_service=sound_alert_service,
             lcd_controller=lcd_controller,
             oled_controller=oled_controller,
         )
@@ -286,13 +272,12 @@ def main():
             show_menu()
             choice = get_user_choice()
 
-            if choice == "L":
-                monitor.list_known_aircraft()
-                input("\nPress Enter to continue...")
-
-            elif choice == "M":
+            if choice == "M":
                 print("-" * 60)
-                print("🔍 Starting aircraft monitoring...")
+                print("🔍 Starting interactive aircraft monitoring...")
+                print(
+                    "Enter aircraft number for details, 'q' to quit, Enter to refresh"
+                )
                 print("-" * 60)
 
                 exit_requested = monitor.start_monitoring(interval=5)
@@ -311,7 +296,7 @@ def main():
         # Cleanup
         print("\n🧹 Cleaning up...")
         if monitor:
-            monitor.stop_monitoring()
+            monitor.cleanup()
         if lcd_controller:
             lcd_controller.cleanup()
         if oled_controller:

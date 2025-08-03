@@ -116,10 +116,7 @@ class ConsoleDisplayService(BaseDisplayService):
 
     def _process_aircraft(self, aircraft: dict):
         """Print aircraft information to console"""
-        flight = aircraft.get("flight", "").strip()
-        alt = aircraft.get("alt_baro") or aircraft.get("alt_geom")
-        alt_str = f"{alt}ft" if alt else "N/A"
-        print(f"    {flight} - {alt_str}")
+        pass  # Handled by the VisualizationService
 
 
 class LCDDisplayService(BaseDisplayService):
