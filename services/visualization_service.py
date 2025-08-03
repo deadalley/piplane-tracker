@@ -95,7 +95,7 @@ class PiPlaneVisualizationService:
         aircraft_list = self._get_sorted_aircraft_list()
 
         if not aircraft_list:
-            print("\nWaiting for aircraft...")
+            print("Waiting for aircraft...")
             return
 
         # Show aircraft list with numbers
