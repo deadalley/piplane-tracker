@@ -35,6 +35,11 @@
         <br><strong>Enhanced Data</strong>
         <br>OpenSky Network API integration for enriched information
       </td>
+      <td align="center">
+        🔊
+        <br><strong>Sound Alerts</strong>
+        <br>Audio notifications for new aircraft detection
+      </td>
     </tr>
   </table>
 </div>
@@ -87,6 +92,16 @@
    ```bash
    python main.py
    ```
+
+### Optional: Sound Alert Setup
+
+For sound alerts, install additional audio packages:
+
+```bash
+# Install audio system tools
+sudo apt update
+sudo apt install mpg123
+```
 
 ## Hardware
 

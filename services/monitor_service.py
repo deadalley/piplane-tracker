@@ -10,15 +10,23 @@ from typing import Dict, List, Optional
 import threading
 import json
 import os
+from config import get_config
 from .display_services import (
     ConsoleDisplayService,
     LCDDisplayService,
     OLEDDisplayService,
 )
+from .sound_alert_service import PiPlaneSoundAlertService
 
 
 class PiPlaneMonitorService:
-    def __init__(self, file_path: str, lcd_controller=None, oled_controller=None):
+    def __init__(
+        self,
+        file_path: str,
+        sound_alert_service,
+        lcd_controller=None,
+        oled_controller=None,
+    ):
         """
         Initialize the alert system
 
@@ -41,6 +49,8 @@ class PiPlaneMonitorService:
         self.oled_service = None
         if oled_controller:
             self.oled_service = OLEDDisplayService(oled_controller)
+
+        self.sound_alert_service = sound_alert_service
 
         # Set aircraft history reference for all services
         self.console_service.aircraft_history = self.aircraft_history
@@ -306,6 +316,9 @@ class PiPlaneMonitorService:
                         print(
                             f"[{timestamp}] New aircrafts detected [{len(new_aircrafts)}]:"
                         )
+
+                        # Trigger sound alert for new aircraft
+                        self.sound_alert_service.play_aircraft_alert()
 
                     time.sleep(interval)
 

@@ -19,10 +19,11 @@ oled_height=32
 oled_i2c_address=60
 oled_update_interval=3
 
-# Alert Settings
-alerts_enabled=true
-alerts_filter_by_callsign=true
-alerts_aircraft_timeout=300
+# Sound Alert Settings
+sound_alerts_enabled=true
+sound_alert_volume=100
+sound_alert_cooldown=0
+sound_alert_audio_file=public/notification.mp3
 
 # Logging Settings
 logging_enabled=false

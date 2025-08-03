@@ -347,38 +347,54 @@ class PiPlaneTrackerConfig:
         """
         return self._get_int("oled_update_interval", 3)
 
-    # === ALERT SYSTEM CONFIGURATION METHODS ===
+    # === SOUND ALERT CONFIGURATION METHODS ===
 
-    def are_alerts_enabled(self) -> bool:
+    def are_sound_alerts_enabled(self) -> bool:
         """
-        Check if alert system is enabled.
+        Check if sound alerts are enabled.
 
         Returns:
-            bool: True if alerts should be shown (default: True)
+            bool: True if sound alerts should be played (default: True)
         """
-        return self._get_bool("alerts_enabled", True)
+        return self._get_bool("sound_alerts_enabled", True)
 
-    def should_filter_by_callsign(self) -> bool:
+    def get_sound_alert_type(self) -> str:
         """
-        Check if alerts should be filtered by callsign presence.
-
-        When enabled, only aircraft with valid callsigns trigger alerts.
+        Get sound alert type.
 
         Returns:
-            bool: True if callsign filtering is enabled (default: True)
+            str: Alert type - "beep", "file", or "speech" (default: "beep")
         """
-        return self._get_bool("alerts_filter_by_callsign", True)
+        return self._get_str("sound_alert_type", "beep")
 
-    def get_aircraft_timeout(self) -> int:
+    def get_sound_alert_volume(self) -> int:
         """
-        Get aircraft timeout in seconds.
-
-        Aircraft not seen for this duration are removed from tracking history.
+        Get sound alert volume percentage.
 
         Returns:
-            int: Aircraft timeout in seconds (default: 300 = 5 minutes)
+            int: Volume percentage 0-100 (default: 70)
         """
-        return self._get_int("alerts_aircraft_timeout", 300)
+        return self._get_int("sound_alert_volume", 70)
+
+    def get_sound_alert_cooldown(self) -> float:
+        """
+        Get sound alert cooldown time in seconds.
+
+        Minimum time between alerts to prevent spam.
+
+        Returns:
+            float: Cooldown time in seconds (default: 1.0)
+        """
+        return self._get_float("sound_alert_cooldown", 1.0)
+
+    def get_sound_alert_audio_file(self) -> str:
+        """
+        Get path to custom audio file for alerts.
+
+        Returns:
+            str: Path to audio file (default: empty string)
+        """
+        return self._get_str("sound_alert_audio_file", "")
 
     # === LOGGING CONFIGURATION METHODS ===
 

@@ -28,6 +28,8 @@ import sys
 import signal
 import os
 
+from services.sound_alert_service import PiPlaneSoundAlertService
+
 try:
     import termios
     import tty
@@ -252,10 +254,23 @@ def main():
     print("\n🔧 Initializing displays...")
     lcd_controller, oled_controller = initialize_displays()
 
+    # Initalize sound alert service
+    try:
+        sound_alert_service = PiPlaneSoundAlertService(
+            audio_file_path=config.get_sound_alert_audio_file(),
+            alert_cooldown=config.get_sound_alert_cooldown(),
+            volume=config.get_sound_alert_volume(),
+        )
+        print("✅ Sound alert service initialized")
+    except Exception as e:
+        print(f"⚠️  Sound alert service initialization failed: {e}")
+        sound_alert_service = None
+
     # Initialize monitor system
     try:
         monitor = PiPlaneMonitorService(
             file_path=config.get_data_source_path(),
+            sound_alert_service=sound_alert_service,
             lcd_controller=lcd_controller,
             oled_controller=oled_controller,
         )
