@@ -10,7 +10,7 @@
   [![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-red.svg)](https://www.raspberrypi.org/)
   [![ADS-B](https://img.shields.io/badge/ADS--B-dump1090--fa-orange.svg)](https://github.com/flightaware/dump1090)
   
-  Track aircraft in real-time using ADS-B data with LCD/OLED display support. Get a notified every time a new aircraft flights over your region.
+  Track aircrafts in real-time using ADS-B data with LCD/OLED display support. Get notified every time a new aircraft flies over your region.
   
   [Installation](#installation) • [Hardware](#hardware) • [Usage](#usage) • [Contributing](#contributing)
 </div>
