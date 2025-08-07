@@ -56,24 +56,61 @@
 - **OLED Display (128x32)**: Connect via I2C (default address 0x3C)
 - **RTL-SDR**: USB connection for ADS-B reception
 
-### Configuration
-- Edit the `config` to customize the behavior of the application
+### One-Click Installation
 
-### Quick Start
+**The fastest way to get PiPlane Tracker running on your Raspberry Pi:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh | bash
+```
+
+Or download and run the installer manually:
+
+```bash
+wget -O install.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+**What the installer does:**
+- Updates system packages
+- Installs dump1090-fa for ADS-B reception
+- Installs Python dependencies
+- Enables I2C for display hardware
+- Creates systemd service for auto-start
+- Sets up proper permissions and directories
+
+**After installation:**
+```bash
+# Start the service
+sudo systemctl start piplane-tracker
+
+# Check status
+sudo systemctl status piplane-tracker
+
+# View logs
+sudo journalctl -u piplane-tracker -f
+```
+
+### Manual Installation
+
+If you prefer to install manually or need to customize the installation:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/piplane-tracker.git
+   git clone https://github.com/deadalley/piplane-tracker.git
    cd piplane-tracker
    ```
 
-2. **Install Python dependencies**
+2. **Install system dependencies**
    ```bash
    pip install -r requirements
    ```
 
-3. **Set up dump1090-fa** (if not already installed)
+3. **Install dump1090-fa**
    ```bash
+   wget -O - https://flightaware.com/adsb/piaware/files/flightaware-apt-repository.pub | sudo apt-key add -
+   echo 'deb https://flightaware.com/adsb/piaware/repository flightaware-bullseye main' | sudo tee /etc/apt/sources.list.d/flightaware.list
    sudo apt update
    sudo apt install dump1090-fa
    ```
@@ -82,20 +119,30 @@
    ```bash
    nano config
    ```
+5. **Configure sound setup (optional)**
+    ```bash
+    sudo apt install mpg123
+    ```
 
-5. **Run the tracker**
+6. **Run the tracker**
    ```bash
    python main.py
    ```
 
-### Optional: Sound Alert Setup
+### Uninstallation
 
-For sound alerts, install additional audio packages:
+To remove PiPlane Tracker completely:
 
 ```bash
-# Install audio system tools
-sudo apt update
-sudo apt install mpg123
+curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/uninstall.sh | bash
+```
+
+Or download and run the uninstaller:
+
+```bash
+wget -O uninstall.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/uninstall.sh
+chmod +x uninstall.sh
+./uninstall.sh
 ```
 
 ## Hardware
@@ -116,10 +163,10 @@ Raspberry Pi GPIO Layout:
                      
     3V3  (1) (2)  5V     
    GPIO2 (3) (4)  5V     ← LCD VCC
-   GPIO3 (5) (6)  GND    ← LCD/OLED GND  
+   GPIO3 (5) (6)  GND    ← LCD/OLED/Buzzer GND  
    GPIO4 (7) (8)  GPIO14
      GND (9) (10) GPIO15
-  GPIO17 (11)(12) GPIO18
+  GPIO17 (11)(12) GPIO18 ← Buzzer Signal (Pin 11)
   GPIO27 (13)(14) GND
   GPIO22 (15)(16) GPIO23
     3V3 (17)(18) GPIO24
@@ -133,7 +180,12 @@ I2C Connections:
 - SCL: GPIO3 (Pin 5)  → LCD/OLED SCL
 - VCC: 5V (Pin 2/4)   → LCD VCC
 - VCC: 3V3 (Pin 1)    → OLED VCC (3.3V)
-- GND: GND (Pin 6)    → LCD/OLED GND
+- GND: GND (Pin 6)    → LCD/OLED/Buzzer GND
+
+Buzzer Connections:
+- Signal: GPIO17 (Pin 11) → Buzzer positive/signal pin
+- GND: GND (Pin 6/9/14/20/25) → Buzzer negative/ground pin
+- VCC: 3V3 (Pin 1/17) → Buzzer VCC (for active buzzers)
 ```
 
 ### I2C Device Detection

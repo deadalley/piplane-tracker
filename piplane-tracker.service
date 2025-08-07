@@ -1,0 +1,31 @@
+[Unit]
+Description=PiPlane Tracker - Aircraft Monitoring System
+Documentation=https://github.com/deadalley/piplane-tracker
+After=network.target dump1090-fa.service
+Wants=dump1090-fa.service
+
+[Service]
+Type=simple
+User=piplane
+Group=piplane
+WorkingDirectory=/opt/piplane-tracker
+Environment=PATH=/opt/piplane-tracker/venv/bin
+ExecStart=/opt/piplane-tracker/venv/bin/python /opt/piplane-tracker/main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=piplane-tracker
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/piplane-tracker
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target
