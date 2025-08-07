@@ -8,8 +8,9 @@ import os
 import subprocess
 import threading
 import time
-from typing import Optional
 from datetime import datetime
+from gpiozero import DigitalOutputDevice
+from time import sleep
 
 
 class PiPlaneSoundAlertService:
@@ -27,6 +28,7 @@ class PiPlaneSoundAlertService:
         audio_file_path: str,
         alert_cooldown: float = 1.0,
         volume: int = 70,
+        alert_type: str = "mp3",
     ):
         """Initialize the sound alert service"""
         # Check if mpg123 is available
@@ -47,6 +49,9 @@ class PiPlaneSoundAlertService:
         self.audio_file_path = audio_file_path
         self.volume = volume
         self.last_alert_time = 0
+        self.alert_type = alert_type
+
+        self.buzzer = DigitalOutputDevice(17)
 
     def _can_play_alert(self) -> bool:
         """Check if enough time has passed since last alert (cooldown)"""
@@ -54,6 +59,13 @@ class PiPlaneSoundAlertService:
         if current_time - self.last_alert_time < self.alert_cooldown:
             return False
         return True
+
+    def _play_buzzer(self):
+        """Play a simple buzzer sound"""
+        if not self.buzzer.is_active:
+            self.buzzer.on()
+            sleep(0.1)
+            self.buzzer.off()
 
     def _play_mp3(self, file_path: str) -> bool:
         """Play MP3 file with mpg123"""
@@ -65,9 +77,9 @@ class PiPlaneSoundAlertService:
         )
         return True
 
-    def _play_audio_file(self, file_path: str):
+    def _play_alert(self, file_path: str):
         """
-        Play an audio file using available audio players
+        Play an alert
 
         Args:
             file_path (str): Path to audio file
@@ -78,7 +90,15 @@ class PiPlaneSoundAlertService:
 
         def audio_thread():
             try:
-                self._play_mp3(file_path)
+                if self.alert_type == "buzzer":
+                    self._play_buzzer()
+                elif self.alert_type == "mp3":
+                    if not self._play_mp3(file_path):
+                        print(f"Failed to play MP3 file: {file_path}")
+                        return
+                else:
+                    print(f"Unknown alert type: {self.alert_type}")
+                    return
 
             except Exception as e:
                 print(f"Error playing audio file: {e}")
@@ -98,4 +118,4 @@ class PiPlaneSoundAlertService:
 
         timestamp = datetime.now().strftime("%H:%M:%S")
 
-        self._play_audio_file(self.audio_file_path)
+        self._play_alert(self.audio_file_path)

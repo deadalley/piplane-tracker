@@ -20,7 +20,8 @@ oled_update_interval=5
 
 # Sound Alert Settings
 sound_alerts_enabled=true
-sound_alert_volume=100
+sound_alert_type=mp3
+sound_alert_volume=70
 sound_alert_cooldown=0
 sound_alert_audio_file=public/notification.mp3
 

@@ -1,4 +1,5 @@
 rpi-lcd>=0.0.3
+gpiozero
 requests
 adafruit-circuitpython-ssd1306
 pillow

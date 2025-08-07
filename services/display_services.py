@@ -126,6 +126,8 @@ class LCDDisplayService(BaseDisplayService):
         config = get_config()
         self.update_interval = config.get_lcd_update_interval()
 
+        self._show_idle_message
+
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on LCD"""
         if self.lcd_controller:
@@ -153,6 +155,8 @@ class OLEDDisplayService(BaseDisplayService):
         # Get update interval from configuration
         config = get_config()
         self.update_interval = config.get_oled_update_interval()
+
+        self._show_idle_message
 
     def _process_aircraft(self, aircraft: dict):
         """Display aircraft information on OLED"""

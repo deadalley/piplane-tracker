@@ -362,6 +362,15 @@ class PiPlaneTrackerConfig:
         """
         return self._get_str("sound_alert_audio_file", "")
 
+    def get_sound_alert_type(self) -> str:
+        """
+        Get the type of sound alert to use.
+
+        Returns:
+            str: Sound alert type (default: "mp3")
+        """
+        return self._get_str("sound_alert_type", "mp3")
+
     # === HEXDB.IO API CONFIGURATION METHODS ===
 
     def is_hexdb_enabled(self) -> bool:

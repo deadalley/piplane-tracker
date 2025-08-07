@@ -78,6 +78,7 @@ class PiPlaneMonitorService:
                 audio_file_path=config.get_sound_alert_audio_file(),
                 alert_cooldown=config.get_sound_alert_cooldown(),
                 volume=config.get_sound_alert_volume(),
+                alert_type=config.get_sound_alert_type(),
             )
             print("✅ Sound alert service initialized")
         except Exception as e:
