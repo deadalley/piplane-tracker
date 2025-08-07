@@ -94,6 +94,12 @@ class PiPlaneLCDController:
         self.display_text(line1, line2[:16])
         time.sleep(interval)
 
+        aircraft_type = aircraft.get("aircraft_type")
+
+        if aircraft_type:
+            self.display_text(line1, f"{aircraft_type[:16]}")
+            time.sleep(interval)
+
     def display_error(self, error_msg):
         self.display_text("ERROR", error_msg[:16])
 
