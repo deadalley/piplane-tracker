@@ -29,6 +29,20 @@ class PiPlaneSoundAlertService:
         volume: int = 70,
     ):
         """Initialize the sound alert service"""
+        # Check if mpg123 is available
+        try:
+            subprocess.run(
+                ["mpg123", "--version"], capture_output=True, check=True, timeout=5
+            )
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            subprocess.TimeoutExpired,
+        ):
+            raise RuntimeError(
+                "❌ Could not find mpg123. Please install it to use audio alerts."
+            )
+
         self.alert_cooldown = alert_cooldown
         self.audio_file_path = audio_file_path
         self.volume = volume
@@ -42,18 +56,14 @@ class PiPlaneSoundAlertService:
         return True
 
     def _play_mp3(self, file_path: str) -> bool:
-        """Try to play with mpg123"""
-        try:
-            subprocess.run(
-                ["mpg123", "-q", file_path],
-                check=True,
-                capture_output=True,
-                timeout=10,
-            )
-            return True
-        except:
-            pass
-        return False
+        """Play MP3 file with mpg123"""
+        subprocess.run(
+            ["mpg123", "-q", file_path],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+        return True
 
     def _play_audio_file(self, file_path: str):
         """
