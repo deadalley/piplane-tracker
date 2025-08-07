@@ -61,13 +61,13 @@
 **The fastest way to get PiPlane Tracker running on your Raspberry Pi:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/install.sh | bash
 ```
 
 Or download and run the installer manually:
 
 ```bash
-wget -O install.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh
+wget -O install.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -134,13 +134,13 @@ If you prefer to install manually or need to customize the installation:
 To remove PiPlane Tracker completely:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/uninstall.sh | bash
+curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/uninstall.sh | bash
 ```
 
 Or download and run the uninstaller:
 
 ```bash
-wget -O uninstall.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/uninstall.sh
+wget -O uninstall.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/uninstall.sh
 chmod +x uninstall.sh
 ./uninstall.sh
 ```

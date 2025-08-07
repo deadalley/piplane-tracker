@@ -14,8 +14,8 @@
 # 5. Sets up systemd service for auto-start
 # 6. Configures permissions and directories
 #
-# Usage: curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh | bash
-# Or: wget -O install.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/install.sh && chmod +x install.sh && ./install.sh
+# Usage: curl -sSL https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/install.sh | bash
+# Or: wget -O install.sh https://raw.githubusercontent.com/deadalley/piplane-tracker/main/scripts/install.sh && chmod +x install.sh && ./install.sh
 #
 # Requirements:
 # - Raspberry Pi running Raspberry Pi OS
