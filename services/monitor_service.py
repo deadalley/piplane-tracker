@@ -46,6 +46,7 @@ class PiPlaneMonitorService:
 
         config = get_config()
 
+        self.monitor_aircraft_type = config.get_monitor_aircraft_type()
         self.is_hexdb_enabled = config.is_hexdb_enabled()
 
         # Initialize HexDB API with configuration values if enabled
@@ -111,8 +112,14 @@ class PiPlaneMonitorService:
 
     def _is_valid_aircraft(self, aircraft: dict) -> bool:
         """Check if the aircraft data is valid"""
-        flight = aircraft.get("flight", "").strip()
-        return bool(flight)
+        if self.monitor_aircraft_type == "all":
+            return True
+
+        if self.monitor_aircraft_type == "registered":
+            flight = aircraft.get("flight", "").strip()
+            return bool(flight)
+
+        return True
 
     def _read_aircraft_data(self) -> Optional[Dict]:
         """
@@ -211,6 +218,24 @@ class PiPlaneMonitorService:
                 self.aircraft_history[hex_code]["altitude"] = aircraft.get("alt_baro")
             if aircraft.get("gs") is not None:
                 self.aircraft_history[hex_code]["speed"] = aircraft.get("gs")
+            if aircraft.get("flight") is not None:
+                self.aircraft_history[hex_code]["flight"] = aircraft.get("flight")
+
+            # Update HexDB enhanced fields if available
+            if self.is_hexdb_enabled:
+                enhanced_aircraft = enhance_aircraft_data(aircraft)
+                self.aircraft_history[hex_code].update(
+                    {
+                        "aircraft_type": enhanced_aircraft.get("aircraft_type"),
+                        "manufacturer": enhanced_aircraft.get("manufacturer"),
+                        "registration": enhanced_aircraft.get("registration"),
+                        "operator": enhanced_aircraft.get("operator"),
+                    }
+                )
+
+            # Update position history
+            if hex_code not in self.aircraft_history:
+                self.aircraft_history[hex_code] = {"positions": []}
 
             # Add position if available
             if aircraft.get("lat") and aircraft.get("lon"):

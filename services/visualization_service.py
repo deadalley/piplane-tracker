@@ -11,6 +11,8 @@ import select
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from config import get_config
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from common.get_country_from_icao import get_country_from_icao
 from common.get_country_flag import get_country_flag
@@ -40,6 +42,9 @@ class PiPlaneVisualizationService:
         self.render_interval = 2.0  # Render every 2 seconds for auto-refresh
         self.auto_refresh_needed = False  # Flag to trigger immediate refresh
 
+        config = get_config()
+        self.monitor_aircraft_type = config.get_monitor_aircraft_type()
+
         # Get terminal dimensions
         try:
             import shutil
@@ -59,7 +64,7 @@ class PiPlaneVisualizationService:
         """Get sorted list of aircraft (hex_code, info) tuples"""
         return sorted(
             self.aircraft_history.items(),
-            key=lambda x: (-int(x[1]["last_seen"].timestamp()), x[0]),
+            key=lambda x: (x[0], -int(x[1]["last_seen"].timestamp())),
         )
 
     def _is_aircraft_new(self, hex_code: str) -> bool:
@@ -82,64 +87,75 @@ class PiPlaneVisualizationService:
         for hex_code in expired_tags:
             del self.new_aircraft_tags[hex_code]
 
+    def _print_warnings(self):
+        """Print any warnings or important messages"""
+        if self.monitor_aircraft_type not in ["all", "registered"]:
+            print(
+                f"⚠️ Unknown monitor aircraft type: {self.monitor_aircraft_type}. "
+                "Defaulting to 'all'."
+            )
+
+        if not self.running:
+            print("⚠️ Visualization service is not running.")
+
     def _render_aircraft_list(self):
         """Render the aircraft list view"""
         self._clear_screen()
         self._cleanup_new_tags()
 
-        print("=" * 66)
+        print("=" * 76)
         print("🛩️  PiPlane Tracker v1.0")
-        print("=" * 66)
+        print("=" * 76)
         print()
 
         aircraft_list = self._get_sorted_aircraft_list()
 
-        if not aircraft_list:
-            print("Waiting for aircraft...")
-            return
+        if aircraft_list:
+            # Show aircraft list with numbers
+            for i, (hex_code, info) in enumerate(
+                aircraft_list[:15]
+            ):  # Show max 15 aircraft
+                flight = info.get("flight", "Unknown")
+                last_seen = info["last_seen"].strftime("%H:%M:%S")
 
-        # Show aircraft list with numbers
-        for i, (hex_code, info) in enumerate(
-            aircraft_list[:15]
-        ):  # Show max 15 aircraft
-            flight = info.get("flight", "Unknown")
-            last_seen = info["last_seen"].strftime("%H:%M:%S")
+                # Get country flag
+                country = get_country_from_icao(hex_code)
+                country_flag = get_country_flag(country)
 
-            # Get country flag
-            country = get_country_from_icao(hex_code)
-            country_flag = get_country_flag(country)
+                # New aircraft indicator
+                new_indicator = " [NEW]" if self._is_aircraft_new(hex_code) else ""
 
-            # New aircraft indicator
-            new_indicator = " [NEW]" if self._is_aircraft_new(hex_code) else ""
+                # Format additional aircraft data
+                altitude = info.get("altitude")
+                speed = info.get("speed")
+                aircraft_type = info.get("aircraft_type", "")
 
-            # Format additional aircraft data
-            altitude = info.get("altitude")
-            speed = info.get("speed")
-            aircraft_type = info.get("aircraft_type", "")
+                # Format altitude (feet)
+                alt_str = f"{altitude:,}ft" if altitude is not None else "N/A"
 
-            # Format altitude (feet)
-            alt_str = f"{altitude:,}ft" if altitude is not None else "N/A"
+                # Format speed (knots)
+                speed_str = f"{speed}kt" if speed is not None else "N/A"
 
-            # Format speed (knots)
-            speed_str = f"{speed}kt" if speed is not None else "N/A"
+                # Format aircraft type (truncate if too long)
+                type_str = f"{aircraft_type[:8]}" if aircraft_type else ""
 
-            # Format aircraft type (truncate if too long)
-            type_str = f" ({aircraft_type[:8]})" if aircraft_type else ""
-
-            print(
-                f"{i+1:2d}. {country_flag} {flight:<10}{new_indicator:<6}{type_str:<10} | {alt_str:<8} | {speed_str:<6} | {last_seen}"
-            )
+                print(
+                    f"{i+1:2d}. {country_flag} {flight:<10} ({hex_code.upper()}) {new_indicator:<6} | {type_str:<8} | {alt_str:<8} | {speed_str:<7} | {last_seen}"
+                )
+        else:
+            print("No aircraft detected.")
 
         if len(aircraft_list) > 15:
             print(f"... and {len(aircraft_list) - 15} more aircraft")
 
         print()
-        print("-" * 66)
+        print("-" * 76)
+        self._print_warnings()
         print()
         print("  [Enter] Refresh")
         print("  [1] Aircraft Details")
         print("  [Q] Quit")
-        print("=" * 66)
+        print("=" * 76)
         print(">>> ", end="", flush=True)
 
     def _render_aircraft_detail(self, hex_code: str):
@@ -154,7 +170,7 @@ class PiPlaneVisualizationService:
         info = self.aircraft_history[hex_code]
 
         print("🛩️  PiPlane Tracker - Aircraft Details")
-        print("=" * 66)
+        print("=" * 76)
         print()
 
         # Basic information
@@ -205,7 +221,7 @@ class PiPlaneVisualizationService:
                 print(f"   {i+1}. {time_str} - {pos['lat']:.6f}, {pos['lon']:.6f}")
 
         print()
-        print("-" * 66)
+        print("-" * 76)
         print("[ENTER] Return to aircraft list")
         print(">>> ", end="", flush=True)
 

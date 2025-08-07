@@ -251,6 +251,17 @@ class PiPlaneTrackerConfig:
         """
         return self._get_str("data_source_file_path")
 
+    def get_monitor_aircraft_type(self) -> str:
+        """
+        Get the type of aircraft to monitor.
+
+        This can be used to filter aircraft by type (e.g., "all", "registered").
+
+        Returns:
+            str: Aircraft type to monitor (default: "all")
+        """
+        return self._get_str("monitor_aircraft_type", "all")
+
     # === DISPLAY CONFIGURATION METHODS ===
 
     def is_lcd_enabled(self) -> bool:

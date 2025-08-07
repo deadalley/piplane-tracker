@@ -74,7 +74,7 @@ class PiPlaneLCDController:
         if flight:
             line1 = flight[:16]
         else:
-            line1 = f"ICAO: {hex_code[:10]}"
+            line1 = hex_code[:16].upper()
 
         line1 += f" [{country}]" if country else ""
 
