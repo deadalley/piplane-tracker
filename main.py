@@ -45,19 +45,41 @@ from services.monitor_service import PiPlaneMonitorService
 from controllers.lcd_controller import PiPlaneLCDController
 from controllers.oled_controller import PiPlaneOLEDController
 
+# Global variables for cleanup
+running = True
+monitor = None
+lcd_controller = None
+oled_controller = None
 
-def signal_handler(sig, frame):
+
+def handle_shutdown(signum, frame):
     """
-    Handle system signals for graceful shutdown.
+    Handle shutdown signals for graceful cleanup.
 
-    Catches SIGINT (Ctrl+C) and performs clean shutdown of the application,
-    ensuring all resources are properly released.
+    Catches SIGTERM (from systemd) and SIGINT (Ctrl+C) and performs
+    clean shutdown of the application, ensuring all resources are
+    properly released.
 
     Args:
-        sig: Signal number
+        signum: Signal number
         frame: Current stack frame
     """
-    print("\nShutting down PiPlane Tracker...")
+    global running, monitor, lcd_controller, oled_controller
+
+    signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
+    print(f"\n🛑 Shutdown signal received ({signal_name})")
+    running = False
+
+    # Perform cleanup
+    print("🧹 Cleaning up...")
+    if monitor:
+        monitor.cleanup()
+    if lcd_controller:
+        lcd_controller.cleanup()
+    if oled_controller:
+        oled_controller.cleanup()
+    print("✅ Cleanup complete")
+
     sys.exit(0)
 
 
@@ -195,8 +217,9 @@ def main():
         print("  - Interactive console available if visualization is enabled")
         return
 
-    # Register signal handler for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, handle_shutdown)  # From systemd
+    signal.signal(signal.SIGINT, handle_shutdown)  # From Ctrl+C
 
     # Load configuration
     config = get_config()
@@ -207,9 +230,11 @@ def main():
 
     # Initialize displays
     print("\n🔧 Initializing displays...")
+    global lcd_controller, oled_controller
     lcd_controller, oled_controller = initialize_displays()
 
     # Initialize monitor system
+    global monitor
     try:
         monitor = PiPlaneMonitorService(
             lcd_controller=lcd_controller,
@@ -233,16 +258,19 @@ def main():
 
     except KeyboardInterrupt:
         print("\n\n🛑 PiPlane Tracker interrupted by user")
+    except Exception as e:
+        print(f"\n❌ Error during monitoring: {e}")
     finally:
-        # Cleanup
-        print("\n🧹 Cleaning up...")
-        if monitor:
-            monitor.cleanup()
-        if lcd_controller:
-            lcd_controller.cleanup()
-        if oled_controller:
-            oled_controller.cleanup()
-        print("✅ Cleanup complete")
+        # Cleanup (if not already done by signal handler)
+        if running:
+            print("\n🧹 Cleaning up...")
+            if monitor:
+                monitor.cleanup()
+            if lcd_controller:
+                lcd_controller.cleanup()
+            if oled_controller:
+                oled_controller.cleanup()
+            print("✅ Cleanup complete")
 
 
 if __name__ == "__main__":
